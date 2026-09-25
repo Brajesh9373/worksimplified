@@ -16,7 +16,7 @@
  *
  * Config (env):
  *   BRIDGE_PORT            port for the local HTTP API            (default 8081)
- *   PY_INBOUND_URL         where to post inbound messages         (default :8080/...)
+ *   PY_INBOUND_URL         where to post inbound messages         (default :8765/...)
  *   WHATSAPP_SESSION_DIR   Baileys auth state (treat like a password, chmod 700)
  *   WHATSAPP_MODE          "bot" (dedicated number) | "self-chat"  (default bot)
  *   WHATSAPP_DEBUG         "true" for connection logs             (default false)
@@ -37,7 +37,7 @@ const PORT = Number(process.env.BRIDGE_PORT || 8081)
 const SESSION_DIR = process.env.WHATSAPP_SESSION_DIR ||
   path.resolve(process.cwd(), 'session')
 const PY_INBOUND_URL = process.env.PY_INBOUND_URL ||
-  `http://127.0.0.1:${process.env.CONNECTORS_PORT || 8080}/channels/whatsapp/inbound`
+  `http://127.0.0.1:${process.env.CONNECTORS_PORT || 8765}/channels/whatsapp/inbound`
 const MODE = (process.env.WHATSAPP_MODE || 'bot').toLowerCase()
 const DEBUG = (process.env.WHATSAPP_DEBUG || 'false').toLowerCase() === 'true'
 

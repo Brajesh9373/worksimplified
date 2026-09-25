@@ -17,17 +17,23 @@ workspace, so a second message never creates a second project.
 ```bash
 cd /home/brajesh_kurkure/Projects/worksimplified/adk-python
 
-# 1. connectors service (web + telegram + whatsapp inbound)
-nohup .venv/bin/python my_agents/connectors_service.py > /tmp/connectors.log 2>&1 &
+# 1. connectors service (web + telegram + whatsapp inbound):
+#    asks for any credential that is missing, then runs it in the foreground
+./start.sh
 
 # 2. open the web page
-#    http://127.0.0.1:8080/     (chat + intake form with uploads)
+#    http://127.0.0.1:8765/     (chat + intake form with uploads)
 
 # 3. health
-curl -s localhost:8080/health
+curl -s localhost:8765/health
 ```
 
-Use the launcher rather than `python -m connectors.app`: this checkout's virtualenv
+The console starts on 8765 and walks up (8766, 8767, …) to the first free port:
+8000 and the neighbouring well-known ports belong to other services on the
+server. `./start.sh` prints the port it settled on.
+
+Use `./start.sh` rather than `python -m connectors.app`: it runs the service
+launcher (`my_agents/connectors_service.py`), which this checkout's virtualenv
 has an editable `.pth` pointing at a missing path, so `google.adk` only resolves
 when `src/` is added explicitly — the launcher does that, and loads the pipeline's
 `.env` (LLM_*, FRAPPE_*) the way `adk web` does.

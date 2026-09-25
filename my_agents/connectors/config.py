@@ -56,7 +56,9 @@ def host() -> str:
 
 
 def port() -> int:
-    return _int("CONNECTORS_PORT", 8080)
+    # 8765+: 8000 and the neighbouring well-known ports are taken by other
+    # services on the server, so the console starts high and walks up
+    return _int("CONNECTORS_PORT", 8765)
 
 
 def state_dir() -> Path:
