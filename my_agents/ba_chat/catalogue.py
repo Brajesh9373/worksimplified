@@ -102,7 +102,7 @@ def _has_number(text: str, params: dict) -> tuple[bool, str]:
         return False, "need a concrete figure, not TBD"
     if re.search(r"\d", t) or re.search(
             r"\b(january|february|march|april|may|june|july|august|september|october|november|december|"
-            r"week|month|quarter|asap|immediately|flexible)\b", t, re.IGNORECASE):
+            r"week|month|quarter|second|minute|hour|day|daily|asap|immediately|flexible)\b", t, re.IGNORECASE):
         return True, ""
     return False, "need a number, date or timeframe in the answer"
 

@@ -1451,7 +1451,10 @@
     $("baBar").style.width = cov.pct + "%";
     renderBaCheck(data.items);
     renderBaFlow(data.flow);
-    baQuickShow(data.quick_replies);
+    // Yes/Change buttons only when the analyst actually asked something —
+    // a bot that flashes pills after every message feels like a form.
+    baQuickShow(data.done ? ["Create project in Frappe"]
+      : ((data.reply || "").includes("?") ? data.quick_replies : []));
     const create = $("baCreate");
     create.disabled = !data.done;
     if (data.stage === "DONE") {

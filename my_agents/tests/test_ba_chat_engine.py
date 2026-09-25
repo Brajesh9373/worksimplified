@@ -71,7 +71,7 @@ def test_extract_propose_confirm_fulfill(store, llm):
     second = engine.handle_message(store, first["session_id"], "yes")
     ids = [i["id"] for i in second["items"]]
     assert second["items"][ids.index("a0")]["status"] == "fulfilled"
-    assert second["reply"].startswith("Locked in.")
+    assert "what is not working today" in second["reply"]  # next question asked
     assert llm.calls == 1  # confirmation is coded — zero-call turn
 
 
@@ -172,6 +172,78 @@ def test_silent_retry_on_malformed_model_json(store, monkeypatch):
     # the user never sees the joinery — the turn still lands proposed
     assert result["items"][0]["status"] == "proposed"
     assert "didn't quite catch" not in result["reply"]
+
+
+def test_tacit_confirmation_by_moving_on(store, llm):
+    """No 'Yes' ritual: answering the next question locks the previous one."""
+    llm.script.append(_reply("Sharma ERP", text="Got it — Sharma ERP."))
+    first = engine.handle_message(store, None, "Let's call it Sharma ERP")
+    assert first["items"][0]["status"] == "proposed"
+
+    llm.script.append(_reply("Our warehouse dispatches wrong items twice a week",
+                             text="Painful — twice a week."))
+    second = engine.handle_message(store, first["session_id"],
+                                   "Our warehouse dispatches wrong items twice a week")
+    ids = [i["id"] for i in second["items"]]
+    assert second["items"][ids.index("a0")]["status"] == "fulfilled"
+    assert second["items"][ids.index("a1")]["status"] == "proposed"
+
+
+def test_correction_reopens_an_earlier_requirement(store, llm):
+    session = store.create()
+    store.set_item(session, "a0", "fulfilled", "Sharma ERP")
+    llm.script.append({"reply": "My mistake — fixing the name.", "value": "Sharma Group",
+                       "confirmed": False, "corrects": "a0",
+                       "contradiction": "", "off_topic": False})
+    result = engine.handle_message(store, session["id"], "actually call it Sharma Group")
+    entry = store.get_item(store.get(session["id"]), "a0")
+    assert entry["status"] == "proposed"
+    assert entry["value"] == "Sharma Group"
+
+
+def test_bridge_answer_to_next_locks_previous(store, llm):
+    """'Actually the bigger pain is…' answers next — previous locks tacitly."""
+    session = store.create()
+    store.set_item(session, "a0", "proposed", "CampusReads")
+    llm.script.append({"reply": "Pain noted, name kept.", "value": "Books go missing with no trace",
+                       "confirmed": False, "corrects": "",
+                       "contradiction": "", "off_topic": False})
+    result = engine.handle_message(
+        store, session["id"], "actually the bigger pain is books going missing with no trace")
+    after = store.get(session["id"])
+    assert after["items"]["a0"]["status"] == "fulfilled"
+    assert after["items"]["a1"]["status"] == "proposed"
+    assert after["items"]["a1"]["value"] == "Books go missing with no trace"
+
+
+def test_bridge_genuine_correction_reopens(store, llm):
+    session = store.create()
+    store.set_item(session, "a0", "proposed", "CampusReads")
+    llm.script.append({"reply": "Fixing the name.", "value": "Campus Reads Official",
+                       "confirmed": False, "corrects": "a0",
+                       "contradiction": "", "off_topic": False})
+    result = engine.handle_message(store, session["id"], "no, call it Campus Reads Official")
+    entry = store.get_item(store.get(session["id"]), "a0")
+    assert entry["status"] == "proposed"
+    assert entry["value"] == "Campus Reads Official"
+
+
+def test_pure_confirmation_is_zero_call(store, llm):
+    llm.script.append(_reply("Sharma ERP", text="Noted."))
+    first = engine.handle_message(store, None, "Sharma ERP")
+    assert first["items"][0]["status"] == "proposed"
+    engine.handle_message(store, first["session_id"], "ok")
+    assert llm.calls == 1
+
+
+def test_confirmation_helpers():
+    assert engine._is_pure_confirmation("yes")
+    assert engine._is_pure_confirmation("ok")
+    assert not engine._is_pure_confirmation("yes, the budget is 8 lakh")
+    assert engine._looks_like_correction("actually it's 8 lakh")
+    assert engine._looks_like_correction("no, Priya Shah")
+    assert not engine._looks_like_correction("what is not working today")
+    assert not engine._looks_like_correction("yes")
 
 
 def test_empty_message_after_start_nudges(store, llm):
