@@ -68,6 +68,9 @@ def chat(payload: dict) -> JSONResponse:
         result = engine.handle_message(get_store(), session_id or None, message)
     except RuntimeError as exc:
         return _bad(str(exc), 502)
+    except Exception as exc:                                # never leak a trace
+        return _bad(f"the interview hit a snag ({type(exc).__name__}) — "
+                    f"your answers are saved, try again", 502)
     result["ok"] = True
     return JSONResponse(result)
 
@@ -130,6 +133,9 @@ def confirm(payload: dict) -> JSONResponse:
 
 # -------------------------------------------------------------------- build
 def _run_job(store: Store, session_id: str, job_id: str) -> None:
+    # Fresh Store: this runs in a worker thread, never on a request thread's
+    # connection (see store.py).
+    store = Store()
     session = store.get(session_id)
     job = _jobs[job_id]
     if session is None:                                     # pragma: no cover

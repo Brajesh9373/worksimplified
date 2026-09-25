@@ -1024,7 +1024,7 @@
         <div class="quick" id="baQuick" hidden></div>
         <form id="baForm">
           <div class="box">
-            <textarea class="goal" id="baInput" rows="2"
+            <textarea class="goal" id="baInput" rows="2" maxlength="4000"
               placeholder="Answer in your own words…"></textarea>
             <div class="tools">
               <label class="icon-btn" for="baFiles" title="Attach context (text files)"
@@ -1454,9 +1454,17 @@
     baQuickShow(data.quick_replies);
     const create = $("baCreate");
     create.disabled = !data.done;
-    $("baCreateHint").textContent = data.done
-      ? "Signed off — press the button to build in Frappe."
-      : "Unlocks when every requirement is confirmed and signed off.";
+    if (data.stage === "DONE") {
+      create.disabled = true;
+      $("baCreateHint").textContent = "Already built in Frappe — start a new interview for the next project.";
+      const link = $("baExport");
+      link.href = "/api/ba/export?session_id=" + encodeURIComponent(baSession);
+      link.hidden = false;
+    } else {
+      $("baCreateHint").textContent = data.done
+        ? "Signed off — press the button to build in Frappe."
+        : "Unlocks when every requirement is confirmed and signed off.";
+    }
     if (data.done) setStatus("idle", "Signed off");
   }
   async function baSend(text, allowEmpty) {
@@ -1464,6 +1472,7 @@
     if ((!text && !allowEmpty) || baBusy) return;
     baBusy = true;
     say("");
+    baQuickShow([]);
     if (text) baBubble("user", text);
     baTyping(true);
     try {

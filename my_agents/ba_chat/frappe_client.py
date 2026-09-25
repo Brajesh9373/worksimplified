@@ -172,11 +172,26 @@ class FrappeClient:
 _MOSCOW = {"must": "High", "should": "Medium", "could": "Low"}
 
 
+_STORY = re.compile(r"\bas a\b.*\bwant\b.*\bso that\b", re.IGNORECASE | re.DOTALL)
+
+
 def _split_list(text: str) -> list[str]:
-    lines = [ln.strip(" -•\t1234567890.)") for ln in (text or "").splitlines()]
-    items = [ln for ln in lines if len(ln) > 3]
-    if len(items) < 2 and "," in (text or ""):
-        items = [p.strip() for p in text.split(",") if len(p.strip()) > 3]
+    items = []
+    for ln in (text or "").splitlines():
+        # strip only a leading bullet/number marker, never content
+        ln = re.sub(r"^(\d+[.)]|[-*•])\s+", "", ln.strip()).strip()
+        if len(ln) > 3:
+            items.append(ln)
+    if len(items) < 2 and not _STORY.search(text or ""):
+        # comma lists ("billing, alerts, reports") split; a user story in
+        # prose ("As a …, I want …, so that …") must NEVER be shredded —
+        # only split when every part is short.
+        for sep in (";", ","):
+            if sep in (text or ""):
+                parts = [p.strip() for p in text.split(sep) if len(p.strip()) > 3]
+                if len(parts) >= 2 and all(len(p) <= 45 for p in parts):
+                    items = parts
+                    break
     seen, out = set(), []
     for ln in items:
         key = ln.lower()
@@ -258,7 +273,7 @@ def run_setup(session: dict, log: list) -> dict:
             dts.append({"name": dt["name"], **{k: v for k, v in res.items() if k != "error"},
                         **({} if res.get("ok") else {"error": res.get("error")})})
             log.append(f"DocType '{dt['name']}': "
-                       f"{'created + verified' if res.get('created') else 'already present' if res.get('ok') else 'skipped — ' + str(res.get('error'))}")
+                       f"{'created (read-back verified — run bench migrate if its table is missing)' if res.get('created') else 'already present' if res.get('ok') else 'skipped — ' + str(res.get('error'))}")
         if not plan["doctypes"]:
             log.append("DocTypes: none with explicit field lists — skipped (nothing guessed)")
 

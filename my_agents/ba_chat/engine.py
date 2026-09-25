@@ -84,13 +84,17 @@ def _prompt(session: dict, item: dict | None, mode: str, note: str = "") -> list
         hint = f"Last attempt was insufficient: {note}. Probe exactly that gap. " if note else ""
         if mode == "revise":
             task = (f'The user is REVISING "{item["label"]}". Extract the revised '
-                    f"answer into \"value\". End \"reply\" with the revised statement, "
-                    f"then stop — the system asks for confirmation.")
+                    f"answer into \"value\". Preserve lists exactly as given, one "
+                    f"item per line — never paraphrase a list into prose. End \"reply\" "
+                    f"with the revised statement, then stop — the system asks "
+                    f"for confirmation.")
         else:
             task = (f'Current requirement: "{item["label"]}" — {item["why"]} '
                     f"{hint}Extract the user's answer into \"value\" (empty string if "
-                    f"they have not answered yet). End \"reply\" with what you captured, "
-                    f"then stop — the system asks for confirmation.")
+                    f"they have not answered yet). Preserve lists exactly as given, "
+                    f"one item per line — never paraphrase a list into prose. End "
+                    f"\"reply\" with what you captured, then stop — the system asks "
+                    f"for confirmation.")
     system = (
         "You are WorksSimplified's business analyst — warm, sharp, one question at "
         "a time, replies under 120 words, plain text, no markdown headers, no emoji. "
@@ -139,8 +143,14 @@ def _checklist(session: dict) -> list[dict]:
     return out
 
 
+def _plain(reply: str) -> str:
+    """The UI renders textContent — strip markdown the model slips in."""
+    return re.sub(r"\*\*(.+?)\*\*", r"\1", reply or "")
+
+
 def state_result(store, session: dict, reply: str, **kw) -> dict:
     """The full UI payload: reply + checklist + coverage + diagram."""
+    reply = _plain(reply)
     store.append_turn(session, "ba", reply)
     cov = coverage(session)
     result = {"session_id": session["id"], "reply": reply,
@@ -172,7 +182,6 @@ def _advance(store, session: dict) -> dict:
 
 
 def _move_to_review(store, session: dict) -> dict:
-    session["stage"] = "ELICIT"  # summary turn still runs inside ELICIT
     flags = session.get("extra", {}).get("flags", [])
     lines = []
     for item_id in applicable_items(session.get("project_type")):
