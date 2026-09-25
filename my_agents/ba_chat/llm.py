@@ -25,8 +25,13 @@ def settings() -> dict[str, str]:
 
 
 def complete(messages: list[dict[str, Any]], *, temperature: float = 0.2,
-             max_tokens: int = 800, timeout: int = 60) -> str:
-    """One chat-completions call. Raises RuntimeError with a user-safe message."""
+             max_tokens: int = 800, timeout: int = 60,
+             json_mode: bool = False) -> str:
+    """One chat-completions call. Raises RuntimeError with a user-safe message.
+
+    ``json_mode`` asks the gateway for a JSON object; gateways that do not
+    support it fall back to a plain call rather than failing the turn.
+    """
     cfg = settings()
     if not cfg["api_key"]:
         raise RuntimeError("no LLM API key — run ./start.sh and set one first")
@@ -34,11 +39,19 @@ def complete(messages: list[dict[str, Any]], *, temperature: float = 0.2,
         import litellm
     except Exception as exc:                                 # pragma: no cover
         raise RuntimeError(f"LLM library missing: {exc}") from exc
+    call = {"model": cfg["model"], "api_base": cfg["api_base"],
+            "api_key": cfg["api_key"], "temperature": temperature,
+            "max_tokens": max_tokens, "messages": messages,
+            "num_retries": 1, "timeout": timeout}
+    if json_mode:
+        try:
+            response = litellm.completion(
+                **call, response_format={"type": "json_object"})
+            return ((response.choices[0].message.content) or "").strip()
+        except Exception:
+            pass  # gateway without JSON mode — plain call below
     try:
-        response = litellm.completion(
-            model=cfg["model"], api_base=cfg["api_base"], api_key=cfg["api_key"],
-            temperature=temperature, max_tokens=max_tokens, messages=messages,
-            num_retries=1, timeout=timeout)
+        response = litellm.completion(**call)
         return ((response.choices[0].message.content) or "").strip()
     except Exception as exc:
         raise RuntimeError(f"the language service did not answer ({exc})") from exc

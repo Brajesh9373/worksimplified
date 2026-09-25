@@ -40,6 +40,17 @@ def _err(exc: Exception) -> str:
     return msg[:300]
 
 
+# Standard ERPNext names must never be created as fresh custom DocTypes — on an
+# ERPNext site they already exist (→ "already present"); on a plain Frappe
+# site creating them would collide with a later ERPNext install.
+_RESERVED = {"customer", "supplier", "item", "item group", "warehouse",
+             "price list", "employee", "department", "company", "account",
+             "sales order", "purchase order", "sales invoice", "purchase invoice",
+             "delivery note", "quotation", "lead", "opportunity", "payment entry",
+             "journal entry", "stock entry", "bom", "work order", "project",
+             "task", "user", "role"}
+
+
 class FrappeClient:
     """Session-cookie client over the Frappe REST API."""
 
@@ -138,10 +149,14 @@ class FrappeClient:
         return {"ok": True, "name": data.get("name"), "created": True}
 
     def ensure_doctype(self, doctype: str, fields: list[dict]) -> dict:
-        """Create a custom DocType only — never modifies existing ones."""
+        """Create a custom DocType only — never modifies existing ones, and
+        never creates reserved ERPNext names from scratch."""
         exists = self._get(f"/api/resource/DocType/{doctype}", fields='["name"]')
         if exists.get("ok"):
             return {"ok": True, "name": doctype, "created": False}
+        if re.sub(r"\s+", " ", doctype).strip().lower() in _RESERVED:
+            return {"ok": True, "name": doctype, "created": False,
+                    "skipped": "reserved ERPNext name — not created from scratch"}
         modules = self._get("/api/resource/Module Def", fields='["name"]',
                             limit_page_length=50)
         names = [m.get("name") for m in (modules.get("data") or []) if m.get("name")]
@@ -272,8 +287,11 @@ def run_setup(session: dict, log: list) -> dict:
             res = client.ensure_doctype(dt["name"], dt["fields"])
             dts.append({"name": dt["name"], **{k: v for k, v in res.items() if k != "error"},
                         **({} if res.get("ok") else {"error": res.get("error")})})
-            log.append(f"DocType '{dt['name']}': "
-                       f"{'created (read-back verified — run bench migrate if its table is missing)' if res.get('created') else 'already present' if res.get('ok') else 'skipped — ' + str(res.get('error'))}")
+            if res.get("skipped"):
+                log.append(f"DocType '{dt['name']}': skipped — {res['skipped']}")
+            else:
+                log.append(f"DocType '{dt['name']}': "
+                           f"{'created (read-back verified — run bench migrate if its table is missing)' if res.get('created') else 'already present' if res.get('ok') else 'skipped — ' + str(res.get('error'))}")
         if not plan["doctypes"]:
             log.append("DocTypes: none with explicit field lists — skipped (nothing guessed)")
 

@@ -139,6 +139,18 @@ def test_run_setup_without_credentials(monkeypatch):
     assert "not configured" in outcome["error"]
 
 
+def test_reserved_doctype_never_created(monkeypatch):
+    client = fc.FrappeClient.__new__(fc.FrappeClient)  # no network, no init
+    monkeypatch.setattr(fc.FrappeClient, "_get",
+                        lambda self, path, **k: {"ok": False, "error": "HTTP 404"})
+    posted: list = []
+    monkeypatch.setattr(fc.FrappeClient, "_post",
+                        lambda self, path, payload: (posted.append(path),
+                                                     {"ok": True, "data": {}})[1])
+    res = client.ensure_doctype("Customer", [{"fieldname": "phone"}])
+    assert res.get("skipped") and posted == []
+
+
 def test_run_setup_login_failure(monkeypatch, creds):
     class BadLogin(FakeFrappe):
         def login(self):

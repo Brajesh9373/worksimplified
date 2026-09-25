@@ -161,6 +161,19 @@ def test_done_session_stays_done(store, llm):
     assert llm.calls == 0
 
 
+def test_silent_retry_on_malformed_model_json(store, monkeypatch):
+    texts = ["Sure — here you go, but wrapped in prose with no JSON at all",
+             json.dumps({"reply": "Noted: Sharma ERP.", "value": "Sharma ERP",
+                         "confirmed": False, "contradiction": "",
+                         "off_topic": False})]
+    monkeypatch.setattr("ba_chat.llm.complete",
+                        lambda messages, **kwargs: texts.pop(0))
+    result = engine.handle_message(store, None, "call it Sharma ERP")
+    # the user never sees the joinery — the turn still lands proposed
+    assert result["items"][0]["status"] == "proposed"
+    assert "didn't quite catch" not in result["reply"]
+
+
 def test_empty_message_after_start_nudges(store, llm):
     llm.script.append({"reply": "Hello! What should we call this project?",
                        "value": "", "confirmed": False,

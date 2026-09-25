@@ -115,12 +115,23 @@ def _prompt(session: dict, item: dict | None, mode: str, note: str = "") -> list
 def _call(session: dict, item: dict | None, mode: str, note: str = "") -> dict:
     try:
         raw = _llm.complete(_prompt(session, item, mode, note),
-                            temperature=0.2, max_tokens=800)
+                            temperature=0.2, max_tokens=800, json_mode=True)
     except RuntimeError as exc:
         return {"reply": f"{exc} Your answers so far are saved — nothing is lost.",
                 "value": "", "confirmed": False, "contradiction": "",
                 "off_topic": False, "_error": True}
     data = _llm.extract_json(raw)
+    if not data or not isinstance(data.get("reply"), str):
+        # One silent retry: ~1 in 10 turns the model wraps the JSON in prose
+        # or truncates it — the user should never see that joinery.
+        try:
+            raw = _llm.complete(_prompt(session, item, mode, note),
+                                temperature=0.2, max_tokens=800, json_mode=True)
+        except RuntimeError as exc:
+            return {"reply": f"{exc} Your answers so far are saved — nothing is lost.",
+                    "value": "", "confirmed": False, "contradiction": "",
+                    "off_topic": False, "_error": True}
+        data = _llm.extract_json(raw)
     if not data or not isinstance(data.get("reply"), str):
         return {"reply": "I didn't quite catch that — could you say it once more, "
                          "in your own words?",
