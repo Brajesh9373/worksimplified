@@ -93,7 +93,7 @@ def test_confirm_buttons_fulfill_or_reopen(client, llm):
     ok = client.post("/api/ba/confirm",
                      json={"session_id": sid, "item_id": "a0", "confirmed": True}).json()
     assert ok["ok"] is True
-    assert ok["reply"].startswith("Locked in.")
+    assert "what is not working today" in ok["reply"]  # moves to the next question
 
     # confirming twice is a conflict — nothing is proposed any more
     again = client.post("/api/ba/confirm",
