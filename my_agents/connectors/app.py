@@ -51,6 +51,13 @@ def build_app(core: ChannelCore | None = None, *, start_telegram: bool = True) -
     app = FastAPI(title="WorkSimplified connectors", lifespan=lifespan)
     app.include_router(web_router(core))
     app.include_router(admin_router(runtime))
+    try:
+        # Standalone BA chatbot: plain FastAPI + LiteLLM, zero ADK imports.
+        # `my_agents/` is on sys.path via the service launcher / tests.
+        from ba_chat.api import router as ba_router
+        app.include_router(ba_router)
+    except Exception as exc:                                # pragma: no cover
+        log.warning("ba_chat unavailable: %s", exc)
 
     @app.get("/health")
     async def health() -> JSONResponse:

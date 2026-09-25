@@ -22,7 +22,7 @@ cd /home/brajesh_kurkure/Projects/worksimplified/adk-python
 ./start.sh
 
 # 2. open the web page
-#    http://127.0.0.1:8765/     (chat + intake form with uploads)
+#    http://127.0.0.1:8765/     (Discover interview chat + run view)
 
 # 3. health
 curl -s localhost:8765/health
@@ -59,8 +59,8 @@ The same three lines are repeated in each agent's `.env` (`ba_agent`,
 agent's directory — a per-agent file wins over the pipeline's.
 
 If a model call fails, discovery falls back to a plain "tell me more" reply rather
-than erroring, and the **intake form still works** because it seeds generation mode
-and skips the discovery turn.
+than erroring, and `POST /intake` still seeds generation mode directly,
+skipping the discovery turn.
 
 ### Telegram
 
@@ -104,17 +104,21 @@ scans it links their own device to the number — so it is only served while
 | `ingest.py` | structured fields + document uploads → workspace evidence |
 | `telegram.py` | Bot API long polling (httpx, no extra dependency) |
 | `whatsapp.py` | allowlist + client for the Node bridge (`/health`, `/qr`, `/send`) |
-| `web.py` | the console page, intake and progress endpoints |
+| `web.py` | the console page, intake/progress/download endpoints |
 | `admin.py` | the Connectors tab API: channel status, saving settings, the pairing QR |
-| `static/chat.html` | the console (BA Agent · Preview · Connectors tabs) |
+| `static/chat.html` | the console (Discover · Preview · Connectors tabs) |
 | `app.py` | the FastAPI service |
 | `whatsapp_bridge/` | Node Baileys sidecar |
 
 ## Behaviour worth knowing
 
 - **Discovery then generation.** A new conversation is a chat; the pipeline only
-  produces documents when you ask (`generate my BRD`). The intake form does that
-  for you.
+  produces documents when you ask (`generate my BRD`).
+- **Discover tab (no ADK).** The console's entry point is a standalone BA
+  interview (`my_agents/ba_chat/` — plain FastAPI + LiteLLM, zero ADK imports):
+  it elicits, confirms and signs off requirements, draws the live coverage
+  diagram, and builds the signed-off scope straight into Frappe. See
+  `my_agents/ba_chat/README.md`.
 - **Long turns.** `submit` acknowledges first, then pushes the reply when the
   turn finishes — Telegram/WhatsApp are never blocked by a multi-minute run.
 - **Human pauses resume.** When the pipeline waits for a human, the next message

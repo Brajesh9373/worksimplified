@@ -865,6 +865,82 @@
     .qr-box{flex-direction:column}
     .qr-img{align-self:center}
   }
+  /* -------------------------------------------------------------- discover */
+  .discover{display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:22px;
+    margin-top:26px; align-items:start}
+  @media (max-width:900px){ .discover{grid-template-columns:1fr} }
+  .chat-log{border:1px solid var(--rule); border-radius:3px; background:var(--panel);
+    padding:16px 18px; max-height:430px; overflow-y:auto; display:flex;
+    flex-direction:column; gap:12px; margin-bottom:10px}
+  .chat-log:empty::after{content:"The interview starts here — say hello, or pick a brief below.";
+    color:var(--faint); font-size:13px}
+  .msg{max-width:88%; padding:9px 13px; border-radius:3px; font-size:13.5px;
+    line-height:1.6; white-space:pre-wrap; word-wrap:break-word}
+  .msg.ba{align-self:flex-start; background:var(--paper-2);
+    border:1px solid var(--rule)}
+  .msg.user{align-self:flex-end; background:var(--ink); color:var(--paper)}
+  .msg.sys{align-self:center; font-size:12px; color:var(--faint);
+    background:none; padding:2px 6px}
+  .quick{display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 10px}
+  .quick[hidden]{display:none}
+  .quick button{border:1px solid var(--rule-2); background:var(--panel);
+    border-radius:20px; padding:6px 15px; font:inherit; font-size:12.5px;
+    cursor:pointer; color:var(--ink)}
+  .quick button:hover{border-color:var(--accent); color:var(--accent)}
+  .quick button.go{border-color:var(--accent); background:var(--accent);
+    color:#FFF9F4; font-weight:600}
+  #baForm .box{margin-bottom:0}
+  #baNew{border:1px solid var(--rule-2); background:none; border-radius:3px;
+    height:36px; padding:0 14px; font:inherit; font-size:13px; color:var(--muted);
+    cursor:pointer; flex:none}
+  #baNew:hover{color:var(--ink); border-color:var(--ink)}
+  .typing{color:var(--faint); font-size:12.5px; padding:4px 2px}
+  .build{margin-top:16px; border:1px solid var(--rule); border-radius:3px;
+    background:var(--panel); padding:16px 18px}
+  .build[hidden]{display:none}
+  .build-actions{margin-top:10px}
+  #baExport{border:1px solid var(--rule-2); border-radius:3px; padding:7px 14px;
+    font-size:12.5px; color:var(--ink); text-decoration:none; display:inline-block}
+  #baExport:hover{border-color:var(--accent); color:var(--accent)}
+  #baExport[hidden]{display:none}
+  .ba-side{border:1px solid var(--rule); border-radius:3px; background:var(--panel);
+    padding:16px 18px; position:sticky; top:18px}
+  .ba-side .bar{height:4px; background:var(--rule); position:relative;
+    overflow:hidden; margin:8px 0 4px}
+  .ba-side .bar i{position:absolute; left:0; top:0; bottom:0; width:0;
+    background:var(--accent); transition:width .5s cubic-bezier(.2,.7,.3,1)}
+  .ba-side .card-label{margin-top:14px}
+  .ba-side .card-label:first-child{margin-top:0}
+  .flow{display:flex; flex-direction:column; margin-top:6px}
+  .fnode{display:grid; grid-template-columns:20px 1fr auto; gap:9px; align-items:start;
+    position:relative; padding:5px 0}
+  .fnode:not(:last-child)::before{content:""; position:absolute; left:9px; top:26px;
+    bottom:-6px; width:2px; background:var(--rule)}
+  .fnode[data-status="done"]:not(:last-child)::before{background:var(--done)}
+  .fdot{width:18px; height:18px; border-radius:50%; border:2px solid var(--rule-2);
+    background:var(--panel); margin-top:1px}
+  .fnode[data-status="done"] .fdot{background:var(--done); border-color:var(--done)}
+  .fnode[data-status="active"] .fdot{border-color:var(--work);
+    animation:blink 1.1s ease-in-out infinite}
+  .flabel{font-size:13px; line-height:1.45}
+  .flabel small{display:block; color:var(--faint); font-size:11.5px}
+  .fcount{font-family:var(--mono); font-size:11px; color:var(--faint); margin-top:3px}
+  .fnode[data-status="done"] .fcount{color:var(--done)}
+  .fnode[data-status="active"] .fcount{color:var(--work)}
+  .checklist{margin-top:6px; max-height:300px; overflow-y:auto}
+  .cgroup{margin-bottom:10px}
+  .cgroup > b{display:block; font-size:10.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--faint); margin-bottom:4px}
+  .citem{display:flex; gap:7px; align-items:baseline; font-size:12.5px;
+    padding:2px 0; color:var(--muted)}
+  .citem .st{font-family:var(--mono); font-size:10px; flex:none; width:58px;
+    color:var(--faint)}
+  .citem[data-status="fulfilled"]{color:var(--ink)}
+  .citem[data-status="fulfilled"] .st{color:var(--done)}
+  .citem[data-status="proposed"] .st{color:var(--work)}
+  .citem[data-status="assumed"] .st{color:var(--held)}
+  .start.wide{width:100%; margin:14px 0 0; height:42px}
+  #baCreateHint{margin-top:8px}
 </style>
 </head>
 <body>
@@ -881,7 +957,7 @@
       <div class="rail-label">Console</div>
       <nav class="tabs" role="tablist" aria-label="Views">
         <button class="tab" id="tab-agent" role="tab" aria-selected="true"
-                aria-controls="panel-agent"><span class="n">01</span>BA Agent</button>
+                aria-controls="panel-agent"><span class="n">01</span>Discover</button>
         <button class="tab" id="tab-preview" role="tab" aria-selected="false"
                 aria-controls="panel-preview"><span class="n">02</span>Preview</button>
         <button class="tab" id="tab-connectors" role="tab" aria-selected="false"
@@ -924,14 +1000,14 @@
     <header class="masthead">
       <div class="kicker">
         <span>WorkSimplified</span><span class="sep">/</span>
-        <span>Delivery pipeline</span><span class="line"></span>
-        <span>BA → Frappe</span>
+        <span>Discover</span><span class="line"></span>
+        <span>Talk first, build later</span>
       </div>
-      <h1 class="display">One brief in. <em>Five documents out</em> — and a system that runs.</h1>
-      <p class="deck">Describe the work, attach what you already have, and five agents
-        write the <strong>BRD, project plan, functional spec and technical design</strong>
-        — each one gated and traceable — then configure and verify a real
-        <strong>Frappe</strong> build. You watch every stage as it happens.</p>
+      <h1 class="display">Talk to your BA. <em>Nothing builds</em> until the requirements are signed off.</h1>
+      <p class="deck">Answer in your own words. The analyst asks only what this project needs,
+        confirms every requirement back with you, and lights up the coverage diagram as each one lands.
+        When everything is captured, you sign off — and one button creates the project in
+        <strong>Frappe</strong>.</p>
     </header>
 
     <div class="resume" id="resume" hidden>
@@ -940,43 +1016,64 @@
       <button type="button" id="resumeBtn">Watch it</button>
     </div>
 
-    <div class="composer-wrap">
-      <div class="card-label"><span>The brief</span>
-        <span class="count mono" id="charCount">0</span></div>
-      <form id="form">
-        <div class="box">
-          <textarea class="goal" id="goal" rows="3"
-            placeholder="What should the system do, who uses it, and what does it replace?"></textarea>
-          <div class="chips" id="chips"></div>
-          <div class="tools">
-            <button type="button" class="icon-btn" id="mic" title="Dictate" aria-label="Dictate">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="2" width="6" height="11" rx="3"/>
-                <path d="M5 10a7 7 0 0 0 14 0M12 19v3"/>
-              </svg>
-            </button>
-            <label class="icon-btn" for="files" title="Attach documents" aria-label="Attach documents">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                   stroke-linecap="round" stroke-linejoin="round">
-                <path d="m16 6-8.5 8.5a3.5 3.5 0 0 0 5 5L20 12a5 5 0 0 0-7-7L5.5 12.5a7 7 0 0 0 10 10"/>
-              </svg>
-            </label>
-            <input id="files" type="file" multiple hidden
-                   accept=".txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.pdf,.docx">
-            <button class="start" id="start" type="submit">Start the pipeline</button>
+    <div class="discover">
+      <div class="chat-col">
+        <div class="card-label"><span>BA interview</span>
+          <span class="count mono" id="baCount">0 of 0</span></div>
+        <div class="chat-log" id="baLog" aria-live="polite"></div>
+        <div class="quick" id="baQuick" hidden></div>
+        <form id="baForm">
+          <div class="box">
+            <textarea class="goal" id="baInput" rows="2"
+              placeholder="Answer in your own words…"></textarea>
+            <div class="tools">
+              <label class="icon-btn" for="baFiles" title="Attach context (text files)"
+                     aria-label="Attach context">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m16 6-8.5 8.5a3.5 3.5 0 0 0 5 5L20 12a5 5 0 0 0-7-7L5.5 12.5a7 7 0 0 0 10 10"/>
+                </svg>
+              </label>
+              <input id="baFiles" type="file" multiple hidden
+                     accept=".txt,.md,.markdown,.csv,.json,.log,.yaml,.yml">
+              <button class="start" id="baSend" type="submit">Send</button>
+              <button type="button" class="ghost" id="baNew"
+                      title="Start a new interview">New</button>
+            </div>
+          </div>
+          <p class="hint">Enter sends, Shift+Enter adds a line. Attachments are pasted in
+            as context — text files only.</p>
+          <p class="note" id="note" hidden></p>
+        </form>
+        <div class="build" id="baBuild" hidden>
+          <div class="card-label"><span>Frappe setup</span>
+            <span class="mono" id="baJobState"></span></div>
+          <ol class="events" id="baJobLog"></ol>
+          <div class="build-actions">
+            <a id="baExport" class="ghost" href="#">Download the BRD draft</a>
           </div>
         </div>
-        <p class="hint">Documents: text, .csv, .json, .yaml, <strong>PDF</strong> and
-          <strong>Word (.docx)</strong> — up to 5 MB each. A scanned PDF needs OCR first.
-          Drop them on the box, or press <kbd>⌘</kbd> <kbd>↵</kbd> to start.</p>
-        <p class="note" id="note" hidden></p>
-      </form>
+      </div>
+
+      <aside class="ba-side">
+        <div class="card-label"><span>Coverage</span>
+          <span class="mono" id="baPct">0%</span></div>
+        <div class="bar"><i id="baBar"></i></div>
+        <div class="card-label"><span>Flow</span>
+          <span class="aside">lights up per requirement</span></div>
+        <div class="flow" id="baFlow" aria-live="polite"></div>
+        <div class="card-label"><span>Requirements</span></div>
+        <div class="checklist" id="baCheck"></div>
+        <button type="button" class="start wide" id="baCreate" disabled>
+          Create project in Frappe</button>
+        <p class="hint" id="baCreateHint">Unlocks when every requirement is confirmed
+          and signed off.</p>
+      </aside>
     </div>
 
     <div class="section-head">
       <h2>Start from a real brief</h2>
-      <span class="aside">click to load</span>
+      <span class="aside">sends the first message</span>
     </div>
     <div class="examples">
       <button type="button" class="example" data-brief="Small manufacturing ERP for a 60-person factory: items with BOMs, work orders, job costing and stock valuation across two warehouses. Replaces Excel and a legacy Access database. 25 users across production, stores and finance.">
@@ -997,23 +1094,21 @@
     </div>
 
     <div class="section-head">
-      <h2>What comes out</h2>
-      <span class="aside">five stages, every one gated</span>
+      <h2>How this works</h2>
+      <span class="aside">talk first, build later</span>
     </div>
     <div class="chain">
-      <div class="link"><span class="n">01</span><span class="t">BA</span>
-        <span class="d">BRD and BA package from your brief and documents</span></div>
-      <div class="link"><span class="n">02</span><span class="t">Project</span>
-        <span class="d">Scope, WBS, schedule, RACI and RAID</span></div>
-      <div class="link"><span class="n">03</span><span class="t">Functional</span>
-        <span class="d">FR catalogue, use cases, validations, traceability</span></div>
-      <div class="link"><span class="n">04</span><span class="t">Technical</span>
-        <span class="d">Architecture, APIs, data schema, NFRs, build tasks</span></div>
-      <div class="link"><span class="n">05</span><span class="t">Frappe</span>
-        <span class="d">Configured on your site, then read back and verified</span></div>
+      <div class="link"><span class="n">01</span><span class="t">Talk</span>
+        <span class="d">Answer the analyst in your own words — viability first, then the details</span></div>
+      <div class="link"><span class="n">02</span><span class="t">Confirm</span>
+        <span class="d">Every requirement is played back to you; only Yes marks it fulfilled</span></div>
+      <div class="link"><span class="n">03</span><span class="t">Sign off</span>
+        <span class="d">Review the full pack like a contract, correct anything, then lock it in</span></div>
+      <div class="link"><span class="n">04</span><span class="t">Frappe</span>
+        <span class="d">One button creates the Project, Tasks and setup — verified by read-back</span></div>
     </div>
-    <p class="footnote">Each stage must pass its gate before the next one starts.
-      Anything that slips is carried forward and reported — nothing is quietly dropped.</p>
+    <p class="footnote">Nothing builds before sign-off. Anything assumed along the way is
+      flagged at review — nothing is quietly invented.</p>
 
   </section>
 
@@ -1222,13 +1317,11 @@
                 queued:"queued"};
   const PIPE = ["BA","PROJECT","FUNCTIONAL","TECHNICAL","FRAPPE","VALIDATION"];
 
-  let files = [];
   let workspace = "";
   let timer = null;
   let lastKey = "";
   let lastDocsKey = "";
 
-  const goal = $("goal");
   const note = $("note");
   const say = (text, bad) => {
     note.textContent = text || "";
@@ -1252,145 +1345,276 @@
   $("tab-preview").addEventListener("click", () => showTab("preview"));
   $("tab-connectors").addEventListener("click", () => showTab("connectors"));
 
-  // ---------------------------------------------------------- brief length
-  const charCount = $("charCount");
-  const countChars = () => { charCount.textContent = String(goal.value.length); };
-  goal.addEventListener("input", countChars);
-  countChars();
+  // ------------------------------------------------------------ BA interview
+  const baLog = $("baLog"), baQuick = $("baQuick"), baForm = $("baForm"),
+        baInput = $("baInput");
+  let baSession = "";
+  try { baSession = localStorage.getItem("ba_session") || ""; } catch (e) {}
+  let baBusy = false, baGroups = {}, baJobTimer = null;
+
+  const baSave = () => { try {
+    if (baSession) localStorage.setItem("ba_session", baSession);
+    else localStorage.removeItem("ba_session");
+  } catch (e) {} };
+
+  function baBubble(who, text) {
+    const div = document.createElement("div");
+    div.className = "msg " + who;
+    div.textContent = text;
+    baLog.appendChild(div);
+    baLog.scrollTop = baLog.scrollHeight;
+  }
+  function baTyping(on) {
+    let t = $("baTyping");
+    if (on && !t) {
+      t = document.createElement("div");
+      t.id = "baTyping"; t.className = "typing";
+      t.textContent = "The analyst is thinking…";
+      baLog.appendChild(t);
+      baLog.scrollTop = baLog.scrollHeight;
+    }
+    if (!on && t) t.remove();
+  }
+  function baQuickShow(list) {
+    baQuick.textContent = "";
+    (list || []).forEach((label) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      if (/create project/i.test(label)) b.className = "go";
+      b.addEventListener("click", () => {
+        if (/create project/i.test(label)) { baCreate(); return; }
+        baSend(label);
+      });
+      baQuick.appendChild(b);
+    });
+    baQuick.hidden = !(list && list.length);
+  }
+  function renderBaCheck(items) {
+    const box = $("baCheck");
+    box.textContent = "";
+    const order = Object.keys(baGroups).length ? Object.keys(baGroups)
+      : [...new Set((items || []).map((i) => i.group))];
+    order.forEach((gid) => {
+      const group = (items || []).filter((i) => i.group === gid);
+      if (!group.length) return;
+      const wrap = document.createElement("div");
+      wrap.className = "cgroup";
+      const head = document.createElement("b");
+      head.textContent = gid + " · " + ((baGroups[gid] && baGroups[gid].label) || "");
+      wrap.appendChild(head);
+      group.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "citem";
+        row.dataset.status = item.status;
+        const st = document.createElement("span");
+        st.className = "st";
+        st.textContent = item.status;
+        const lb = document.createElement("span");
+        lb.textContent = item.label;
+        row.append(st, lb);
+        wrap.appendChild(row);
+      });
+      box.appendChild(wrap);
+    });
+  }
+  function renderBaFlow(flow) {
+    const box = $("baFlow");
+    box.textContent = "";
+    ((flow && flow.nodes) || []).forEach((node) => {
+      if (node.status === "na") return;
+      const el = document.createElement("div");
+      el.className = "fnode";
+      el.dataset.status = node.status;
+      const dot = document.createElement("span");
+      dot.className = "fdot";
+      const lab = document.createElement("span");
+      lab.className = "flabel";
+      lab.textContent = node.id + " · " + node.label;
+      const sub = document.createElement("small");
+      sub.textContent = node.desc || "";
+      lab.appendChild(sub);
+      const count = document.createElement("span");
+      count.className = "fcount";
+      count.textContent = node.resolved + "/" + node.total;
+      el.append(dot, lab, count);
+      box.appendChild(el);
+    });
+  }
+  function baApplyState(data) {
+    if (!data) return;
+    baSession = data.session_id || baSession;
+    baSave();
+    const cov = data.coverage || {resolved: 0, total: 0, pct: 0};
+    $("baCount").textContent = cov.resolved + " of " + cov.total;
+    $("baPct").textContent = cov.pct + "%";
+    $("baBar").style.width = cov.pct + "%";
+    renderBaCheck(data.items);
+    renderBaFlow(data.flow);
+    baQuickShow(data.quick_replies);
+    const create = $("baCreate");
+    create.disabled = !data.done;
+    $("baCreateHint").textContent = data.done
+      ? "Signed off — press the button to build in Frappe."
+      : "Unlocks when every requirement is confirmed and signed off.";
+    if (data.done) setStatus("idle", "Signed off");
+  }
+  async function baSend(text, allowEmpty) {
+    text = (text || "").trim();
+    if ((!text && !allowEmpty) || baBusy) return;
+    baBusy = true;
+    say("");
+    if (text) baBubble("user", text);
+    baTyping(true);
+    try {
+      const r = await fetch("/api/ba/chat", {method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({session_id: baSession, message: text})});
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok || body.error || !body.ok) throw new Error(body.error || ("HTTP " + r.status));
+      baTyping(false);
+      baBubble("ba", body.reply || "(no reply)");
+      baApplyState(body);
+      setStatus("active", "Interviewing");
+    } catch (err) {
+      baTyping(false);
+      baBubble("sys", "Could not send that: " + err.message);
+      say("Could not send that: " + err.message, true);
+    }
+    baBusy = false;
+  }
+  baForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = baInput.value;
+    baInput.value = "";
+    baSend(text);
+    baInput.focus();
+  });
+  baInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      baForm.requestSubmit();
+    }
+  });
+  $("baNew").addEventListener("click", () => {
+    baSession = "";
+    baSave();
+    baLog.textContent = "";
+    baQuickShow([]);
+    if (baJobTimer) { clearInterval(baJobTimer); baJobTimer = null; }
+    $("baBuild").hidden = true;
+    bootBa();
+  });
+  $("baFiles").addEventListener("change", async (e) => {
+    const picked = Array.from(e.target.files || []).slice(0, 3);
+    e.target.value = "";
+    for (const f of picked) {
+      if (f.size > 200 * 1024) {
+        say(f.name + " is over 200 kB — paste the relevant part instead.", true);
+        continue;
+      }
+      const text = await f.text().catch(() => "");
+      if (!text.trim()) continue;
+      const base = baInput.value.replace(/\s+$/, "");
+      baInput.value = (base ? base + "\n\n" : "") +
+        "Context from " + f.name + ":\n" + text.slice(0, 6000).trim();
+    }
+    baInput.focus();
+  });
 
   // ------------------------------------------------------------- examples
   document.querySelectorAll(".example").forEach((btn) => {
     btn.addEventListener("click", () => {
-      goal.value = btn.dataset.brief || "";
-      countChars();
-      goal.focus();
-      goal.setSelectionRange(goal.value.length, goal.value.length);
       window.scrollTo({top: 0, behavior: "smooth"});
+      baSend(btn.dataset.brief || "");
     });
   });
 
-  // ------------------------------------------------------------ attachments
-  function renderChips() {
-    const box = $("chips");
-    box.textContent = "";
-    files.forEach((file, i) => {
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      const name = document.createElement("span");
-      name.textContent = file.name;
-      const size = document.createElement("span");
-      size.className = "size";
-      size.textContent = Math.max(1, Math.round(file.size / 1024)) + "k";
-      const drop = document.createElement("button");
-      drop.type = "button";
-      drop.className = "drop";
-      drop.textContent = "×";
-      drop.title = "Remove " + file.name;
-      drop.addEventListener("click", () => { files.splice(i, 1); renderChips(); });
-      chip.append(name, size, drop);
-      box.append(chip);
-    });
-  }
-
-  $("files").addEventListener("change", (e) => {
-    files = files.concat(Array.from(e.target.files || []));
-    e.target.value = "";
-    renderChips();
-  });
-
-  // drop documents straight onto the composer
-  const box = document.querySelector(".box");
-  ["dragenter", "dragover"].forEach((name) => box.addEventListener(name, (e) => {
-    e.preventDefault();
-    box.classList.add("hot");
-  }));
-  ["dragleave", "drop"].forEach((name) => box.addEventListener(name, (e) => {
-    e.preventDefault();
-    box.classList.remove("hot");
-  }));
-  box.addEventListener("drop", (e) => {
-    files = files.concat(Array.from(e.dataTransfer.files || []));
-    renderChips();
-  });
-
-  goal.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      $("form").requestSubmit();
-    }
-  });
-
-  // -------------------------------------------------------------- dictation
-  const mic = $("mic");
-  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Speech) {
-    mic.disabled = true;
-    mic.title = "This browser has no speech recognition. Chrome and Edge support it.";
-  } else {
-    const rec = new Speech();
-    rec.interimResults = true;
-    rec.continuous = false;
-    mic.addEventListener("click", () => {
-      if (mic.dataset.rec === "1") { rec.stop(); return; }
-      try { rec.start(); } catch (e) { say("Could not start the microphone.", true); }
-    });
-    rec.addEventListener("start", () => {
-      mic.dataset.rec = "1"; mic.title = "Stop dictating";
-    });
-    rec.addEventListener("end", () => {
-      mic.dataset.rec = "0"; mic.title = "Dictate";
-    });
-    rec.addEventListener("error", (e) => {
-      mic.dataset.rec = "0";
-      say(e.error === "not-allowed"
-        ? "Microphone access is blocked. Allow it for this site, then try again."
-        : "Dictation stopped (" + e.error + ").", true);
-    });
-    rec.addEventListener("result", (e) => {
-      let heard = "";
-      for (let i = 0; i < e.results.length; i++) heard += e.results[i][0].transcript;
-      const base = goal.value.replace(/\s+$/, "");
-      goal.value = (base ? base + " " : "") + heard.trim();
-      countChars();
-    });
-  }
-
-  // ------------------------------------------------------------------ start
-  $("form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const text = goal.value.trim();
-    if (!text) { say("Describe what you want built, then start."); goal.focus(); return; }
-    say("");
-    const start = $("start");
-    start.disabled = true;
-    start.textContent = "Starting…";
-
-    const form = new FormData();
-    form.append("goal", text);
-    form.append("mode", "generation");
-    files.forEach((f) => form.append("files", f, f.name));
-
+  // ------------------------------------------------------- Frappe setup job
+  async function baCreate() {
+    if ($("baCreate").disabled) return;
+    $("baBuild").hidden = false;
+    $("baJobState").textContent = "starting…";
+    $("baJobLog").textContent = "";
+    $("baExport").hidden = true;
+    $("baCreate").disabled = true;
+    let jobId = "";
     try {
-      const r = await fetch("/intake", {method: "POST", body: form});
+      const r = await fetch("/api/ba/create-project", {method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({session_id: baSession})});
       const body = await r.json().catch(() => ({}));
-      if (!r.ok || body.error) throw new Error(body.error || ("HTTP " + r.status));
-      workspace = body.workspace || "";
-      if (!workspace) throw new Error("the service did not return a workspace");
-
-      const rejected = body.rejected || [];
-      if (rejected.length) {
-        say(rejected.map((x) => (x.name || x.file || "file") + " — " + x.error)
-              .join(" · "), true);
-      }
-      enterRun(text, workspace);
-      await poll();
-      timer = setInterval(poll, 1200);
+      if (!r.ok || !body.ok) throw new Error(body.error || ("HTTP " + r.status));
+      jobId = body.job_id;
+      $("baJobState").textContent = body.reused ? "reused" : "running…";
+      if (baJobTimer) clearInterval(baJobTimer);
+      baJobTimer = setInterval(() => baPollJob(jobId), 1500);
+      baPollJob(jobId);
     } catch (err) {
-      start.disabled = false;
-      start.textContent = "Start the pipeline";
-      say("Could not start: " + err.message, true);
+      $("baJobState").textContent = "failed";
+      say("Could not start the Frappe setup: " + err.message, true);
+      $("baCreate").disabled = false;
     }
-  });
+  }
+  $("baCreate").addEventListener("click", baCreate);
+  async function baPollJob(jobId) {
+    try {
+      const r = await fetch("/api/ba/job?job_id=" + encodeURIComponent(jobId),
+        {cache: "no-store"});
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok || !body.ok) return;
+      const log = $("baJobLog");
+      log.textContent = "";
+      (body.log || []).forEach((line) => {
+        const li = document.createElement("li");
+        li.textContent = line;
+        log.appendChild(li);
+      });
+      if (body.status === "done") {
+        if (baJobTimer) { clearInterval(baJobTimer); baJobTimer = null; }
+        $("baJobState").textContent = "done";
+        const link = $("baExport");
+        link.href = "/api/ba/export?session_id=" + encodeURIComponent(baSession);
+        link.hidden = false;
+        baBubble("sys", "Project '" + (body.project || "") + "' is live in Frappe " +
+          "with " + (body.tasks_total || 0) + " tasks. The BRD draft is ready to download.");
+        setStatus("idle", "Built in Frappe");
+      } else if (body.status === "failed") {
+        if (baJobTimer) { clearInterval(baJobTimer); baJobTimer = null; }
+        $("baJobState").textContent = "failed";
+        say("Frappe setup failed: " + (body.error || "unknown error"), true);
+        $("baCreate").disabled = false;
+      }
+    } catch (e) { /* next poll */ }
+  }
+
+  // ------------------------------------------------------------------ boot
+  async function bootBa() {
+    try {
+      const c = await fetch("/api/ba/catalogue", {cache: "no-store"});
+      const cat = await c.json().catch(() => ({}));
+      (cat.groups || []).forEach((g) => { baGroups[g.id] = g; });
+    } catch (e) { /* checklist still renders, without group names */ }
+    if (baSession) {
+      try {
+        const r = await fetch("/api/ba/state?session_id=" +
+          encodeURIComponent(baSession), {cache: "no-store"});
+        const body = await r.json().catch(() => ({}));
+        if (r.ok && body.ok) {
+          (body.transcript || []).forEach((t) =>
+            baBubble(t.role === "user" ? "user" : "ba", t.text || ""));
+          if (!body.transcript || !body.transcript.length)
+            baBubble("sys", "Welcome back — the interview continues below.");
+          baApplyState(body);
+          return;
+        }
+      } catch (e) { /* fall through to a fresh chat */ }
+      baSession = "";
+      baSave();
+    }
+    baSend("", true);
+  }
+  bootBa();
 
   function enterRun(text, ws) {
     $("briefText").textContent = text.replace(/\s+/g, " ");
