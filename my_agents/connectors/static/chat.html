@@ -1,0 +1,2615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WorkSimplified</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,600&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F2EA;
+    --paper-2:#F1ECE2;
+    --panel:#FFFCF7;
+    --ink:#17140F;
+    --ink-2:#3B342A;
+    --muted:#6E6558;
+    --faint:#9B9184;
+    --rule:#E5DDD0;
+    --rule-2:#D3C8B7;
+    --accent:#B4441F;
+    --accent-2:#8E3416;
+    --accent-wash:#F7E9E0;
+    --work:#C07C12;
+    --work-wash:#FAF0DC;
+    --done:#2E6A4A;
+    --done-wash:#E9F1EB;
+    --held:#A93226;
+    --held-wash:#F8E9E7;
+    --queued:#A79C8C;
+    --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+
+  /* ------------------------------------------------------------------ frame */
+  .frame{display:flex; min-height:100vh}
+
+  .rail{
+    width:238px; flex:none; border-right:1px solid var(--rule);
+    background:var(--paper-2);
+    display:flex; flex-direction:column; gap:28px; padding:24px 18px 20px;
+    position:sticky; top:0; height:100vh;
+  }
+  .mark{display:flex; align-items:center; gap:9px; padding:0 6px}
+  .mark .glyph{
+    width:22px; height:22px; flex:none; background:var(--ink); color:var(--paper);
+    font-family:var(--serif); font-weight:700; font-size:14px;
+    display:grid; place-items:center; line-height:1;
+  }
+  .mark .word{font-family:var(--serif); font-weight:600; font-size:17px;
+    letter-spacing:-.015em}
+  .mark .word i{font-style:italic; color:var(--accent); font-weight:600}
+
+  .rail-label{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--faint); padding:0 6px; margin-bottom:8px}
+  .tabs{display:flex; flex-direction:column; gap:3px}
+  .tab{
+    display:flex; align-items:baseline; gap:10px; text-align:left; font:inherit;
+    font-size:14px; color:var(--muted); background:none; border:0;
+    border-left:2px solid transparent; padding:9px 10px; cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .tab .n{font-family:var(--mono); font-size:10.5px; color:var(--faint)}
+  .tab:hover{background:#EAE3D7; color:var(--ink)}
+  .tab[aria-selected="true"]{
+    color:var(--ink); font-weight:600; border-left-color:var(--accent);
+    background:var(--panel);
+  }
+  .tab[aria-selected="true"] .n{color:var(--accent)}
+
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .rail-foot{margin-top:auto; display:flex; flex-wrap:wrap; align-items:center;
+    gap:8px; padding:0 6px; border-top:1px solid var(--rule); padding-top:14px}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--queued); flex:none;
+    box-shadow:0 0 0 0 rgba(192,124,18,.45)}
+  .dot[data-state="active"]{background:var(--work); animation:pulse 1.8s ease-out infinite}
+  .dot[data-state="done"]{background:var(--done)}
+  .dot[data-state="held"]{background:var(--held)}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(192,124,18,.45)}
+    70%{box-shadow:0 0 0 7px rgba(192,124,18,0)}
+    100%{box-shadow:0 0 0 0 rgba(192,124,18,0)}
+  }
+  .status-text{font-size:12.5px; color:var(--ink-2)}
+  .elapsed{font-size:12px; color:var(--faint); width:100%}
+
+  .content{flex:1; min-width:0}
+  .panel{max-width:820px; margin:0 auto; padding:56px 36px 110px}
+
+  /* -------------------------------------------------------------- masthead */
+  .masthead{margin-bottom:34px; animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+  .kicker{display:flex; align-items:center; gap:12px; font-size:10.5px;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+    margin-bottom:20px}
+  .kicker .line{height:1px; background:var(--rule-2); flex:1}
+  .kicker .sep{color:var(--faint)}
+  .display{
+    font-family:var(--serif); font-weight:600; font-size:clamp(34px,5.4vw,54px);
+    line-height:1.03; letter-spacing:-.025em; margin:0 0 18px; max-width:16ch;
+    text-wrap:balance;
+  }
+  .display em{font-style:italic; font-weight:600; color:var(--accent)}
+  .deck{font-size:16px; line-height:1.6; color:var(--muted); max-width:60ch;
+    margin:0; animation:rise .5s .08s cubic-bezier(.2,.7,.3,1) both}
+  .deck strong{color:var(--ink); font-weight:600}
+  @keyframes rise{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+
+  /* ------------------------------------------------------------ composer */
+  .composer-wrap{animation:rise .5s .14s cubic-bezier(.2,.7,.3,1) both}
+  .card-label{display:flex; align-items:baseline; gap:10px; font-size:10.5px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--faint);
+    margin-bottom:10px}
+  .card-label .count{margin-left:auto; letter-spacing:.06em}
+  .box{
+    background:var(--panel); border:1px solid var(--rule-2); border-radius:3px;
+    box-shadow:0 1px 0 rgba(23,20,15,.04), 0 8px 24px -18px rgba(23,20,15,.35);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .box:focus-within{border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-wash), 0 8px 24px -18px rgba(23,20,15,.35)}
+  .box.hot{border-color:var(--accent); background:#FFFBF6}
+  .goal{display:block; width:100%; border:0; outline:0; resize:none; background:none;
+    font-family:var(--serif); font-size:18px; line-height:1.5; color:inherit;
+    padding:18px 18px 8px; min-height:104px}
+  .goal::placeholder{color:var(--faint); font-style:italic}
+  .tools{display:flex; align-items:center; gap:6px; padding:9px 9px 9px 12px;
+    border-top:1px solid var(--rule)}
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center; width:34px;
+    height:34px; border-radius:3px; border:1px solid transparent; background:none;
+    color:var(--muted); cursor:pointer; flex:none; transition:all .14s ease;
+  }
+  .icon-btn:hover{background:var(--paper-2); color:var(--ink); border-color:var(--rule)}
+  .icon-btn:disabled{color:var(--rule-2); cursor:not-allowed; background:none}
+  .icon-btn[data-rec="1"]{color:var(--held); border-color:var(--held);
+    background:var(--held-wash); animation:blink 1.1s ease-in-out infinite}
+  .icon-btn svg{width:17px; height:17px; display:block}
+  .start{
+    margin-left:auto; height:36px; padding:0 20px; border-radius:3px;
+    border:1px solid var(--accent); background:var(--accent); color:#FFF9F4;
+    font:inherit; font-size:13.5px; font-weight:600; letter-spacing:.01em;
+    cursor:pointer; flex:none; transition:background .14s ease, transform .1s ease;
+  }
+  .start:hover{background:var(--accent-2); border-color:var(--accent-2)}
+  .start:active{transform:translateY(1px)}
+  .start:disabled{opacity:.5; cursor:not-allowed; transform:none}
+  .hint{margin:11px 2px 0; font-size:12.5px; color:var(--faint)}
+  .hint kbd{font-family:var(--mono); font-size:11px; border:1px solid var(--rule-2);
+    border-bottom-width:2px; border-radius:3px; padding:1px 5px; background:var(--panel)}
+  .note{margin:12px 2px 0; font-size:13px; color:var(--muted)}
+  .note.bad{color:var(--held)}
+  .note[hidden]{display:none}
+
+  /* ---------------------------------------------------------- attachments */
+  .chips{display:flex; flex-wrap:wrap; gap:6px; padding:0 18px 12px}
+  .chips:empty{display:none}
+  .chip{
+    display:inline-flex; align-items:center; gap:7px; max-width:100%;
+    border:1px solid var(--rule-2); border-radius:3px; padding:4px 7px 4px 9px;
+    font-size:12px; color:var(--ink-2); background:var(--paper-2);
+  }
+  .chip::before{content:""; width:5px; height:5px; background:var(--accent); flex:none}
+  .chip .size{font-family:var(--mono); font-size:11px; color:var(--faint)}
+  .chip .drop{border:0; background:none; cursor:pointer; color:var(--faint);
+    font-size:14px; line-height:1; padding:0 2px}
+  .chip .drop:hover{color:var(--held)}
+
+  /* -------------------------------------------------------------- examples */
+  .section-head{display:flex; align-items:baseline; gap:12px; margin:44px 0 14px;
+    padding-bottom:9px; border-bottom:1px solid var(--rule)}
+  .section-head h2{font-family:var(--serif); font-size:17px; font-weight:600;
+    letter-spacing:-.01em; margin:0}
+  .section-head .aside{font-size:11px; color:var(--faint); margin-left:auto;
+    font-family:var(--mono)}
+  .examples{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .example{
+    display:block; text-align:left; font:inherit; cursor:pointer;
+    background:var(--panel); border:1px solid var(--rule); border-radius:3px;
+    padding:14px 14px 13px; transition:transform .16s ease, border-color .16s ease,
+      box-shadow .16s ease;
+  }
+  .example:hover{transform:translateY(-2px); border-color:var(--accent);
+    box-shadow:0 10px 22px -18px rgba(23,20,15,.55)}
+  .example .tag{font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--accent); display:block; margin-bottom:7px}
+  .example .line{font-family:var(--serif); font-size:15px; line-height:1.35;
+    color:var(--ink); display:block}
+  .example .sub{font-size:12px; color:var(--faint); display:block; margin-top:7px}
+
+  /* --------------------------------------------------------- what you get */
+  .chain{display:grid; grid-template-columns:repeat(5,1fr); gap:0;
+    border-top:1px solid var(--ink); border-bottom:1px solid var(--rule)}
+  .link{padding:14px 14px 16px; border-right:1px solid var(--rule); position:relative}
+  .link:last-child{border-right:0}
+  .link::after{content:""; position:absolute; left:14px; right:14px; top:-1px;
+    height:2px; background:transparent}
+  .link:hover::after{background:var(--accent)}
+  .link .n{font-family:var(--mono); font-size:10.5px; color:var(--faint);
+    display:block; margin-bottom:6px}
+  .link .t{font-family:var(--serif); font-size:15.5px; font-weight:600;
+    letter-spacing:-.01em; display:block}
+  .link .d{font-size:11.5px; color:var(--muted); display:block; margin-top:5px;
+    line-height:1.45}
+  .footnote{font-size:12.5px; color:var(--faint); margin:14px 2px 0}
+
+  /* ------------------------------------------------------------ resume bar */
+  .resume{
+    display:flex; align-items:center; gap:12px; margin-bottom:26px;
+    background:var(--accent-wash); border:1px solid var(--rule-2);
+    border-left:3px solid var(--accent); padding:11px 14px; font-size:13px;
+    color:var(--ink-2); animation:rise .4s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .resume[hidden]{display:none}
+  .resume .id{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .resume button{
+    margin-left:auto; font:inherit; font-size:12.5px; font-weight:600;
+    background:var(--ink); color:var(--paper); border:0; border-radius:3px;
+    padding:7px 14px; cursor:pointer;
+  }
+  .resume button:hover{background:var(--accent)}
+
+  /* ---------------------------------------------------------- decision bar */
+  /* A run stops for a human: the BA package review, a gate that exhausted its
+     revisions, a budget stop. Without this the page says "waiting" forever.
+     It sticks to the top because this is the one thing that needs an answer, and
+     the reader is usually scrolled down watching the activity log. */
+  .decision{
+    position:sticky; top:0; z-index:30;
+    background:var(--accent-wash); border-bottom:1px solid var(--rule-2);
+    border-left:4px solid var(--work); padding:14px 36px 16px;
+    box-shadow:0 8px 20px -14px rgba(23,20,15,.5);
+  }
+  .decision[hidden]{display:none}
+  .decision-in{max-width:820px; margin:0 auto; display:flex; flex-direction:column;
+    gap:12px}
+  .decision-say{min-width:0}
+  .decision .eyebrow{display:block; font-size:10.5px; letter-spacing:.14em;
+    text-transform:uppercase; font-weight:600; color:var(--work)}
+  .decision .what{display:block; font-size:15px; line-height:1.35; font-weight:600;
+    color:var(--ink); margin-top:4px}
+  .decision .why{display:block; font-size:12.5px; color:var(--ink-2); margin-top:4px;
+    max-width:78ch; line-height:1.55}
+  .decision .meta{display:block; font-family:var(--mono); font-size:11px;
+    color:var(--work); margin-top:6px}
+  .decision .grow{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .decision button{
+    font:inherit; font-size:13px; font-weight:600; border:0; border-radius:3px;
+    padding:9px 16px; cursor:pointer; background:var(--ink); color:var(--paper);
+    flex:none;
+  }
+  .decision button:hover{background:var(--accent)}
+  .decision button.ghost{
+    background:transparent; color:var(--ink-2); border:1px solid var(--rule-2);
+  }
+  .decision button.ghost:hover{background:var(--panel); color:var(--ink)}
+  .decision input{
+    font:inherit; font-size:13px; padding:9px 11px; width:260px; min-width:0;
+    border:1px solid var(--rule-2); border-radius:3px; background:var(--panel);
+    color:var(--ink); outline:0;
+  }
+  .decision input:focus{border-color:var(--accent)}
+  .decision .busy{font-family:var(--mono); font-size:11px; color:var(--faint)}
+  @media (max-width:760px){
+    .decision{padding:12px 18px}
+    .decision input{width:100%}
+  }
+
+  /* ------------------------------------------------------------- run view */
+  .run-head{border-bottom:1px solid var(--ink); padding-bottom:22px; margin-bottom:0}
+  .run-kicker{display:flex; align-items:center; gap:10px; font-size:10.5px;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--faint);
+    margin-bottom:14px}
+  .pill{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.08em;
+    padding:3px 8px; border:1px solid var(--rule-2); color:var(--muted);
+    background:var(--panel);
+  }
+  .pill[data-state="active"]{color:var(--work); border-color:var(--work);
+    background:var(--work-wash)}
+  .pill[data-state="done"]{color:var(--done); border-color:var(--done);
+    background:var(--done-wash)}
+  .pill[data-state="held"]{color:var(--held); border-color:var(--held);
+    background:var(--held-wash)}
+  .brief-line{display:flex; gap:14px; align-items:flex-start}
+  .brief-line .text{
+    font-family:var(--serif); font-size:clamp(21px,3vw,27px); line-height:1.25;
+    letter-spacing:-.02em; margin:0; flex:1;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .run-stats{display:flex; align-items:flex-end; gap:26px; margin-top:20px;
+    flex-wrap:wrap}
+  .stat .k{font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--faint); display:block; margin-bottom:3px}
+  .stat .v{font-family:var(--mono); font-size:19px; color:var(--ink);
+    font-variant-numeric:tabular-nums; line-height:1}
+  .stat .v.small{font-size:14px; color:var(--muted); word-break:break-all}
+  .overall{margin-left:auto; min-width:230px}
+  .overall .bar{height:4px; background:var(--rule); position:relative;
+    overflow:hidden; margin-top:8px}
+  .overall .bar i{position:absolute; left:0; top:0; bottom:0; width:0;
+    background:var(--accent); transition:width .5s cubic-bezier(.2,.7,.3,1)}
+  .overall .bar i::after{
+    content:""; position:absolute; right:0; top:0; bottom:0; width:18px;
+    background:rgba(255,255,255,.45); animation:sweepbar 1.6s linear infinite;
+  }
+  @keyframes sweepbar{0%{opacity:.15}50%{opacity:.85}100%{opacity:.15}}
+
+  /* stage strip */
+  .strip{display:flex; margin:26px 0 4px; border-bottom:1px solid var(--rule);
+    padding-bottom:22px}
+  .stop{flex:1; position:relative; padding-right:10px}
+  .stop::before{content:""; position:absolute; left:0; right:0; top:5px; height:1px;
+    background:var(--rule-2)}
+  .stop:last-child::before{right:auto; width:5px}
+  .stop .knob{position:relative; width:11px; height:11px; border-radius:50%;
+    background:var(--paper); border:1.5px solid var(--rule-2); z-index:1}
+  .stop .lbl{display:block; font-family:var(--mono); font-size:10px;
+    letter-spacing:.06em; color:var(--faint); margin-top:9px}
+  .stop .nm{display:block; font-size:12.5px; color:var(--muted); margin-top:2px}
+  .stop[data-state="done"]::before{background:var(--done)}
+  .stop[data-state="done"] .knob{background:var(--done); border-color:var(--done)}
+  .stop[data-state="done"] .nm{color:var(--ink)}
+  .stop[data-state="done"] .lbl{color:var(--done)}
+  .stop[data-state="active"]::before,.stop[data-state="carried"]::before{
+    background:repeating-linear-gradient(to right,var(--work) 0 4px,transparent 4px 8px)}
+  .stop[data-state="active"] .knob,.stop[data-state="carried"] .knob{
+    background:var(--work); border-color:var(--work);
+    animation:blink 1.4s ease-in-out infinite}
+  .stop[data-state="active"] .nm,.stop[data-state="carried"] .nm{color:var(--ink)}
+  .stop[data-state="active"] .lbl,.stop[data-state="carried"] .lbl{color:var(--work)}
+  .stop[data-state="held"] .knob{background:var(--held); border-color:var(--held)}
+  .stop[data-state="held"] .lbl,.stop[data-state="held"] .nm{color:var(--held)}
+
+  /* documents produced */
+  .docs{display:flex; flex-wrap:wrap; gap:7px; margin-top:18px}
+  .docs:empty{display:none}
+  .doc{
+    display:inline-flex; align-items:center; gap:7px; font-family:var(--mono);
+    font-size:11.5px; color:var(--ink-2); background:var(--done-wash);
+    border:1px solid #CFDFD4; border-radius:3px; padding:4px 9px;
+    animation:rise .35s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .doc::before{content:"↳"; color:var(--done)}
+  /* a document the customer handed over rather than one the pipeline produced */
+  .doc.given{
+    background:var(--accent-wash); border:1px dashed var(--rule-2); color:var(--ink-2);
+  }
+  .doc.given::before{content:"↧"; color:var(--accent)}
+
+  /* ----------------------------------------------------------- run ledger */
+  .ledger{list-style:none; margin:0; padding:0}
+  .row{
+    display:grid;
+    grid-template-columns:30px 118px minmax(60px,1fr) 66px 78px 46px;
+    align-items:center; gap:14px; padding:14px 4px 14px 14px; position:relative;
+    border-bottom:1px solid var(--rule); transition:background .18s ease;
+  }
+  .row[data-open="1"]{z-index:30}
+  .row:hover{background:#FBF7F0}
+  .row .code{font-family:var(--mono); font-size:11px; color:var(--faint)}
+  .row .name{font-family:var(--serif); font-size:15.5px; color:var(--muted);
+    letter-spacing:-.01em}
+  .row .track{height:3px; background:var(--rule); position:relative; overflow:hidden}
+  .row .track .fill{position:absolute; top:0; bottom:0; left:0; width:0;
+    background:var(--queued); transition:width .5s cubic-bezier(.2,.7,.3,1)}
+  .row .meta{font-family:var(--mono); font-size:11px; color:var(--faint); text-align:right}
+  .row .verdict{font-family:var(--mono); font-size:11px; color:var(--faint);
+    text-align:right; letter-spacing:.03em}
+  /* what this stage produced: one button per row, the files behind it */
+  .row .dl{position:relative; justify-self:end}
+  .dl-btn{font:inherit; font-family:var(--mono); font-size:10.5px; color:var(--faint);
+    background:var(--panel); border:1px solid var(--rule); border-radius:3px;
+    padding:4px 8px; cursor:pointer;
+    transition:border-color .16s ease, color .16s ease}
+  .dl-btn:hover,.dl-btn[aria-expanded="true"]{border-color:var(--ink); color:var(--ink)}
+  .dl-pop{position:absolute; right:0; top:calc(100% + 9px); z-index:20;
+    min-width:262px; max-width:340px; background:var(--panel); border:1px solid var(--ink);
+    border-radius:3px; padding:6px;
+    box-shadow:0 26px 46px -34px rgba(23,20,15,.95);
+    animation:rise .2s cubic-bezier(.2,.7,.3,1) both}
+  .dl-pop[hidden]{display:none}
+  .dl-pop a{display:flex; align-items:center; gap:10px; text-decoration:none;
+    font-family:var(--mono); font-size:11px; color:var(--ink-2); padding:6px 8px;
+    border-radius:2px}
+  .dl-pop a:hover{background:var(--paper); color:var(--ink)}
+  .dl-pop .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .dl-pop .sz{margin-left:auto; flex:none; color:var(--faint)}
+  .dl-pop a::after{content:"↓"; flex:none; color:var(--faint)}
+  .dl-pop a:hover::after{color:var(--accent)}
+
+  .row[data-state="active"]::before,.row[data-state="carried"]::before,
+  .row[data-state="held"]::before{
+    content:""; position:absolute; left:0; top:9px; bottom:9px; width:2px;
+    background:var(--queued);
+  }
+  .row[data-state="active"]{background:#FCF9F3}
+  .row[data-state="active"]::before{background:var(--work)}
+  .row[data-state="carried"]::before{background:var(--work)}
+  .row[data-state="held"]::before{background:var(--held)}
+  .row[data-state="active"] .name{color:var(--ink); font-weight:600}
+  .row[data-state="done"] .name{color:var(--ink)}
+  .row[data-state="done"] .track .fill{background:var(--done); width:100%}
+  .row[data-state="done"] .verdict{color:var(--done)}
+  .row[data-state="active"] .verdict,.row[data-state="carried"] .verdict{color:var(--work)}
+  .row[data-state="held"] .verdict{color:var(--held)}
+  .row[data-state="active"] .track .fill{
+    width:42%; background:var(--work);
+    animation:sweep 1.9s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes sweep{0%{left:-42%}100%{left:100%}}
+
+  /* ---------------------------------------------------------------- events */
+  .activity{margin-top:34px}
+  .activity-head{
+    display:flex; align-items:baseline; gap:10px; padding-bottom:9px;
+    border-bottom:1px solid var(--ink); font-family:var(--serif); font-size:15.5px;
+    font-weight:600; letter-spacing:-.01em;
+  }
+  .activity-head .count{margin-left:auto; font-family:var(--mono); font-size:11.5px;
+    font-weight:400; color:var(--faint)}
+  .events{list-style:none; margin:0; padding:0; max-height:300px; overflow-y:auto;
+    font-family:var(--mono); font-size:11.5px}
+  .ev{display:flex; gap:14px; padding:7px 4px 7px 8px; border-bottom:1px solid #EBE4D9;
+    position:relative}
+  .ev::before{content:""; position:absolute; left:0; top:0; bottom:0; width:2px;
+    background:transparent}
+  .ev .t{color:var(--faint); flex:none; font-variant-numeric:tabular-nums}
+  .ev .k{color:var(--muted); flex:none; width:142px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; letter-spacing:.02em}
+  .ev .s{color:var(--faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .ev:hover .s{color:var(--ink-2)}
+  .ev[data-kind="gate_passed"] .k,.ev[data-kind="validation_passed"] .k{color:var(--done)}
+  .ev[data-kind="gate_passed"]::before,.ev[data-kind="validation_passed"]::before{
+    background:var(--done)}
+  .ev[data-kind="gate_failed"] .k,.ev[data-kind="agent_failed"] .k,
+  .ev[data-kind="validation_failed"] .k{color:var(--held)}
+  .ev[data-kind="gate_failed"]::before,.ev[data-kind="agent_failed"]::before,
+  .ev[data-kind="validation_failed"]::before{background:var(--held)}
+  .ev[data-kind="section_done"] .k,.ev[data-kind="artifact_created"] .k{color:var(--ink)}
+  .ev[data-kind="artifact_created"]::before{background:var(--accent)}
+  .ev[data-kind="stage_carried_forward"] .k{color:var(--work)}
+  .fade{animation:fade .2s ease-out}
+  @keyframes fade{from{opacity:0; transform:translateY(-3px)} to{opacity:1; transform:none}}
+  .empty{color:var(--faint); font-size:12.5px; padding:16px 4px; font-family:var(--sans)}
+
+  /* ------------------------------------------------- agent chain (preview) */
+  .panel-title{font-family:var(--serif); font-size:26px; font-weight:600;
+    letter-spacing:-.02em; margin:0 0 26px}
+  #panel-preview{max-width:1060px}
+
+  .blocks{display:grid;
+    grid-template-columns:1fr 30px 1fr 30px 1fr 30px 1fr 30px 1fr;
+    column-gap:7px; row-gap:9px; margin:0; padding:2px 1px 6px}
+  .blocks .link{align-self:center; height:0; position:relative;
+    border-top:2px solid var(--rule-2)}
+  .blocks .link::after{content:""; position:absolute; right:-1px; top:-5px; width:8px;
+    height:8px; border-top:2px solid var(--rule-2); border-right:2px solid var(--rule-2);
+    transform:rotate(45deg)}
+  .blocks .link[data-state="done"]{border-top-color:var(--done)}
+  .blocks .link[data-state="done"]::after{border-color:var(--done)}
+  .blocks .link[data-state="active"],
+  .blocks .link[data-state="carried"]{border-top-style:dashed; border-top-color:var(--work)}
+  .blocks .link[data-state="active"]::after,
+  .blocks .link[data-state="carried"]::after{border-color:var(--work)}
+  .blocks .link[data-state="held"]{border-top-color:var(--held)}
+  .blocks .link[data-state="held"]::after{border-color:var(--held)}
+  .block{
+    display:flex; flex-direction:column; text-align:left; font:inherit;
+    background:var(--panel); border:1px solid var(--rule); border-radius:3px;
+    padding:12px 13px 13px; cursor:pointer; position:relative; min-height:164px;
+    transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  }
+  .block:hover{transform:translateY(-2px); border-color:var(--rule-2);
+    box-shadow:0 12px 24px -22px rgba(23,20,15,.8)}
+  .block::before{content:""; position:absolute; left:-1px; right:-1px; top:-1px; height:2px;
+    background:transparent}
+  .block .code{font-family:var(--mono); font-size:10px; letter-spacing:.1em; color:var(--faint)}
+  .block .who{font-family:var(--serif); font-size:20px; font-weight:600;
+    letter-spacing:-.022em; line-height:1.1; margin-top:7px}
+  .block .role{font-size:11.5px; line-height:1.35; color:var(--muted); margin-top:5px}
+  .block .gate{display:flex; align-items:center; gap:8px; margin-top:10px;
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.05em; color:var(--faint)}
+  .block .gate .g{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .block .gate .caret{margin-left:auto; font-size:11px; color:var(--rule-2);
+    transition:transform .2s ease, color .2s ease}
+  .block[aria-expanded="true"] .caret{transform:rotate(180deg); color:var(--ink)}
+  .block[data-v="passed"] .gate .g{color:var(--done)}
+  .block[data-v="failed"] .gate .g{color:var(--held)}
+  .block[data-v="carried"] .gate .g{color:var(--work)}
+  .block .file{font-family:var(--mono); font-size:10px; color:var(--faint);
+    margin-top:auto; padding-top:10px; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap}
+  .block .state{position:absolute; top:12px; right:13px; font-family:var(--mono);
+    font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
+  .block .bar{display:block; height:3px; background:var(--rule); margin-top:9px;
+    position:relative; overflow:hidden}
+  .block .bar i{position:absolute; top:0; bottom:0; left:0; width:0; background:var(--queued);
+    transition:width .5s cubic-bezier(.2,.7,.3,1)}
+  .block[data-state="done"]{border-color:#CFDFD4}
+  .block[data-state="done"]::before{background:var(--done)}
+  .block[data-state="done"] .state{color:var(--done)}
+  .block[data-state="done"] .bar i{width:100%; background:var(--done)}
+  .block[data-state="done"] .who{color:var(--ink)}
+  .block[data-state="active"]{border-color:var(--work); background:#FFFDF7}
+  .block[data-state="active"]::before{background:var(--work)}
+  .block[data-state="active"] .state{color:var(--work);
+    animation:blink 1.4s ease-in-out infinite}
+  .block[data-state="active"] .bar i{width:42%; background:var(--work);
+    animation:sweep 1.9s cubic-bezier(.4,0,.2,1) infinite}
+  .block[data-state="active"] .who,.block[data-state="carried"] .who{color:var(--ink)}
+  .block[data-state="carried"]{border-color:#EADCC0; background:var(--work-wash)}
+  .block[data-state="carried"]::before{background:var(--work)}
+  .block[data-state="carried"] .state{color:var(--work)}
+  .block[data-state="held"]{border-color:#EBD2CE; background:var(--held-wash)}
+  .block[data-state="held"]::before{background:var(--held)}
+  .block[data-state="held"] .state{color:var(--held)}
+  .block[aria-expanded="true"]{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink);
+    z-index:1; background:var(--panel)}
+  .block[aria-expanded="true"]::before{background:var(--ink)}
+  .block .retry{font-family:var(--mono); font-size:9.5px; color:var(--work);
+    letter-spacing:.05em; margin-top:6px}
+
+  .validbar{display:flex; align-items:center; gap:13px; width:100%; text-align:left;
+    font:inherit; background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+    padding:11px 13px; margin-top:11px; cursor:pointer;
+    transition:border-color .16s ease, box-shadow .16s ease}
+  .validbar[hidden]{display:none}
+  .validbar:hover{border-color:var(--rule-2)}
+  .validbar .vname{font-family:var(--serif); font-size:15.5px; font-weight:600;
+    letter-spacing:-.015em; flex:none}
+  .validbar .vverdict{font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--faint); flex:none}
+  .validbar[data-v="passed"] .vverdict{color:var(--done)}
+  .validbar[data-v="failed"] .vverdict{color:var(--held)}
+  .validbar .vcov{font-family:var(--mono); font-size:10.5px; color:var(--muted);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .validbar .vhint{margin-left:auto; font-family:var(--mono); font-size:10px;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--faint); flex:none}
+  .validbar[aria-expanded="true"]{border-color:var(--ink); box-shadow:0 0 0 2px var(--ink)}
+  .validbar[aria-expanded="true"] .vhint{color:var(--ink)}
+
+  /* ----------------------------------------------------- agent detail card */
+  .detail{border:1px solid var(--rule-2); background:var(--panel); margin-top:16px;
+    box-shadow:0 1px 0 rgba(23,20,15,.04), 0 18px 34px -30px rgba(23,20,15,.9);
+    animation:rise .3s cubic-bezier(.2,.7,.3,1) both}
+  .detail:empty{display:none}
+  .d-head{display:flex; align-items:baseline; gap:13px; flex-wrap:wrap;
+    padding:17px 18px 15px; border-bottom:1px solid var(--ink)}
+  .d-head .code{font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    color:var(--faint)}
+  .d-head h3{font-family:var(--serif); font-size:22px; font-weight:600;
+    letter-spacing:-.022em; margin:0}
+  .d-head .role{font-size:13px; color:var(--muted)}
+  .d-head .pill{margin-left:auto}
+  .d-head .follow{font-family:var(--mono); font-size:9.5px; letter-spacing:.1em;
+    text-transform:uppercase; background:none; border:1px solid var(--rule);
+    border-radius:2px; padding:5px 8px; cursor:pointer; color:var(--muted);
+    transition:border-color .16s ease, color .16s ease}
+  .d-head .follow:hover{border-color:var(--ink); color:var(--ink)}
+  .d-does{padding:15px 18px 2px; font-size:14.5px; line-height:1.62; color:var(--ink-2);
+    max-width:80ch; margin:0}
+  .d-grid{display:grid; grid-template-columns:1.1fr 1fr; padding-top:14px}
+  .d-col{padding:14px 18px 18px; border-top:1px solid var(--rule); min-width:0}
+  .d-col + .d-col{border-left:1px solid var(--rule)}
+  .d-h{font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--faint);
+    margin:0 0 11px}
+  .d-list{list-style:none; margin:0 0 16px; padding:0}
+  .d-list li{font-size:13px; line-height:1.5; color:var(--muted); padding:3px 0 3px 15px;
+    position:relative}
+  .d-list li::before{content:""; position:absolute; left:0; top:11px; width:8px; height:1px;
+    background:var(--rule-2)}
+  .d-list li b{color:var(--ink); font-weight:500}
+  .d-list li .mono{font-size:12px}
+  .d-activity{border-top:1px solid var(--rule); padding:14px 18px 16px}
+  .d-activity ol{list-style:none; margin:9px 0 0; padding:0; font-family:var(--mono);
+    font-size:11px}
+  .d-activity li{display:flex; gap:13px; padding:5px 0; border-bottom:1px dashed var(--rule)}
+  .d-activity li:last-child{border-bottom:0}
+  .d-activity .t{color:var(--faint); flex:none}
+  .d-activity .k{color:var(--muted); flex:none; width:150px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap}
+  .d-activity .s{color:var(--faint); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap}
+  .d-empty{font-size:12.5px; color:var(--faint); font-style:italic; margin:8px 0 0}
+
+  .steps{list-style:none; margin:13px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:5px}
+  .steps li{font-family:var(--mono); font-size:10.5px; color:var(--faint);
+    border:1px solid var(--rule); border-radius:2px; padding:3px 7px;
+    background:var(--paper)}
+  .steps li[data-done="1"]{color:var(--done); border-color:#CFDFD4;
+    background:var(--done-wash)}
+  .trail{margin-top:12px; font-family:var(--mono); font-size:10.5px; color:var(--work)}
+  /* -------------------------------------------------------- preview panel */
+  .pv-head{margin-bottom:22px}
+  .pv-meta{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 6px}
+  .pv-meta[hidden]{display:none}
+  .pv-chip{display:inline-flex; align-items:baseline; gap:9px; border:1px solid var(--rule);
+    background:var(--panel); padding:7px 12px}
+  .pv-chip b{font-weight:500; font-size:10px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--faint)}
+  .pv-chip i{font-style:normal; font-family:var(--mono); font-size:12px;
+    color:var(--ink); font-variant-numeric:tabular-nums}
+
+  .cycle-live{display:flex; gap:12px; align-items:flex-start; margin-top:14px;
+    padding:12px 15px; background:var(--panel); border:1px solid var(--rule);
+    border-left:3px solid var(--accent)}
+  .cycle-live[hidden]{display:none}
+  .cycle-live .pulse{width:8px; height:8px; border-radius:50%; background:var(--accent);
+    flex:none; margin-top:5px; animation:blink 1.2s ease-in-out infinite}
+  .cycle-live .txt{display:block; min-width:0}
+  .cycle-live .cap{display:block; font-size:13.5px; color:var(--ink); margin-bottom:4px}
+  .cycle-live em{font-style:normal; font-family:var(--mono); font-size:11px;
+    color:var(--faint); display:block; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap}
+
+  /* stage cards — gate, sections, artifact, gaps */
+  .detail .gate{display:flex; flex-wrap:wrap; align-items:center; gap:9px;
+    margin-top:12px; font-family:var(--mono); font-size:11px; color:var(--faint)}
+  .detail .gate .gname{color:var(--muted); letter-spacing:.05em}
+  .detail .gate .gsep{color:var(--rule-2)}
+  .detail .gate .gverdict{padding:2px 8px; border:1px solid var(--rule);
+    letter-spacing:.07em; background:var(--paper)}
+  .detail .gate[data-v="passed"] .gverdict{color:var(--done); border-color:#CFDFD4;
+    background:var(--done-wash)}
+  .detail .gate[data-v="failed"] .gverdict{color:var(--held); border-color:#EBD2CE;
+    background:var(--held-wash)}
+  .detail .gate[data-v="carried"] .gverdict{color:var(--work); border-color:#EADCC0;
+    background:var(--work-wash)}
+  .detail .missing{list-style:none; margin:9px 0 0; padding:0}
+  .detail .missing li{font-family:var(--mono); font-size:10.5px; line-height:1.6;
+    color:var(--held); padding-left:12px; position:relative}
+  .detail .missing li::before{content:"×"; position:absolute; left:0; color:var(--held)}
+  .detail .out{display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+    margin-top:12px; font-family:var(--mono); font-size:11px; color:var(--faint)}
+  .detail .out .path{color:var(--ink-2)}
+  .detail .out a.path{color:var(--ink); border-bottom:1px dashed var(--rule-2);
+    text-decoration:none}
+  .detail .out a.path:hover{color:var(--accent); border-bottom-color:var(--accent)}
+  .detail .out .arrow{color:var(--accent)}
+  .detail .more{list-style:none; margin:9px 0 0; padding:0}
+  .detail .more a{font-family:var(--mono); font-size:10.5px; color:var(--muted);
+    text-decoration:none; padding:2px 0; display:inline-block}
+  .detail .more a::before{content:"\21b3 "; color:var(--faint)}
+  .detail .more a:hover{color:var(--accent)}
+  .detail .out .dim{color:var(--faint)}
+  .detail .gaps{margin-top:12px; border-left:2px solid var(--work); padding-left:11px}
+  .detail .gaps b{display:block; font-size:10px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--work); font-weight:500; margin-bottom:5px}
+  .detail .gaps ul{list-style:none; margin:0; padding:0}
+  .detail .gaps li{font-family:var(--mono); font-size:10.5px; line-height:1.6;
+    color:var(--muted)}
+  .detail .note-line{margin-top:10px; font-size:12px; color:var(--muted);
+    font-style:italic}
+  .detail .diagram{display:inline-block; font-family:var(--mono); font-size:10.5px;
+    color:var(--faint); border:1px dashed var(--rule-2); padding:3px 7px;
+    margin-top:10px}
+
+  /* validation checks, shown inside the validation agent's detail */
+  .vchecks{list-style:none; margin:8px 0 0; padding:0}
+  .vchecks li{display:flex; gap:12px; align-items:baseline; padding:7px 0;
+    border-bottom:1px dashed var(--rule); font-size:13px; color:var(--muted)}
+  .vchecks li:last-child{border-bottom:0}
+  .vchecks .mark{font-family:var(--mono); font-size:10.5px; width:62px; flex:none;
+    letter-spacing:.06em; color:var(--faint)}
+  .vchecks li[data-ok="1"]{color:var(--ink)}
+  .vchecks li[data-ok="1"] .mark{color:var(--done)}
+  .vchecks li[data-ok="0"] .mark{color:var(--held)}
+  .vchecks li[data-ok="0"]{color:var(--ink)}
+  .vchecks .why{margin-left:auto; font-family:var(--mono); font-size:10.5px;
+    color:var(--faint); text-align:right; max-width:52%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .coverage{display:flex; flex-wrap:wrap; gap:16px; margin-top:14px; padding-top:12px;
+    border-top:1px solid var(--rule); font-family:var(--mono); font-size:11px;
+    color:var(--faint); font-variant-numeric:tabular-nums}
+  .coverage b{color:var(--ink); font-weight:500}
+  .coverage span{display:inline-flex; gap:6px; align-items:baseline}
+
+  /* -------------------------------------------------------------- responsive */
+  @media (max-width:900px){
+    .examples{grid-template-columns:1fr}
+    .chain{grid-template-columns:repeat(2,1fr)}
+    .chain .link{border-bottom:1px solid var(--rule)}
+    .chain .link:nth-child(2n){border-right:0}
+    .d-grid{grid-template-columns:1fr}
+    .d-col + .d-col{border-left:0}
+    .blocks{grid-template-columns:repeat(3,1fr)}
+    .blocks .link{display:none}
+  }
+  @media (max-width:760px){
+    .frame{flex-direction:column}
+    .rail{width:auto; height:auto; position:static; flex-direction:row;
+      align-items:center; gap:16px; padding:12px 16px;
+      border-right:0; border-bottom:1px solid var(--rule); flex-wrap:wrap}
+    .rail-label{display:none}
+    .tabs{flex-direction:row}
+    .tab{border-left:0; border-bottom:2px solid transparent; padding:6px 8px}
+    .tab[aria-selected="true"]{border-left-color:transparent;
+      border-bottom-color:var(--accent)}
+    .rail-foot{margin:0 0 0 auto; padding:0; border-top:0; flex-wrap:nowrap}
+    .elapsed{width:auto}
+    .panel{padding:34px 18px 80px}
+    .strip{flex-wrap:wrap; gap:14px 0}
+    .stop{flex:0 0 33.33%}
+    .stop::before{display:none}
+    .overall{margin-left:0; width:100%}
+    #panel-preview{max-width:100%}
+  }
+  @media (max-width:560px){
+    .chain{grid-template-columns:1fr}
+    .chain .link{border-right:0}
+    .row{grid-template-columns:24px 96px minmax(40px,1fr) 74px 40px; gap:10px}
+    .row .meta{display:none}
+    .ev .k{width:110px}
+    .run-stats{gap:18px}
+    .vchecks li{flex-wrap:wrap; gap:4px 12px}
+    .vchecks .why{margin-left:0; max-width:100%; text-align:left}
+    .d-grid{grid-template-columns:1fr}
+    .d-head h3{font-size:19px}
+    .blocks{grid-template-columns:repeat(2,1fr)}
+    .d-activity .k{width:110px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; transition:none !important}
+    .row[data-state="active"] .track .fill{width:100%; opacity:.55}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
+
+  /* ------------------------------------------------------- connectors tab */
+  .cfg-intro{font-size:13px; color:var(--ink-2); margin:0 0 24px; max-width:74ch}
+  .cfg-intro .mono{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .cfg-tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:14px; margin:0 0 4px}
+  .cfg-tile{
+    display:flex; align-items:center; gap:15px; font:inherit; text-align:left;
+    background:var(--panel); border:1px solid var(--rule); border-radius:3px;
+    padding:16px 16px 15px; cursor:pointer;
+    transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  }
+  .cfg-tile:hover{transform:translateY(-2px); border-color:var(--rule-2);
+    box-shadow:0 12px 24px -22px rgba(23,20,15,.8)}
+  .cfg-tile .cfg-logo{flex:none; width:48px; height:48px; display:grid;
+    place-items:center; border:1px solid var(--rule); border-radius:50%;
+    background:var(--paper)}
+  .cfg-tile .cfg-logo svg{width:23px; height:23px; fill:var(--ink-2);
+    transition:fill .16s ease}
+  .cfg-tile:hover .cfg-logo svg{fill:var(--accent)}
+  .cfg-tbody{display:flex; flex-direction:column; gap:4px; min-width:0}
+  .cfg-trow{display:flex; align-items:center; gap:12px}
+  .cfg-tname{font-family:var(--serif); font-size:18px; font-weight:600;
+    letter-spacing:-.02em}
+  .cfg-state{font-size:11.5px; color:var(--faint); overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap}
+  .cfg-cta{font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--faint)}
+  .cfg-tile:hover .cfg-cta{color:var(--accent)}
+  .cfg-state{font-size:11.5px; color:var(--faint)}
+  .cfg-pill{
+    margin-left:auto; font-family:var(--mono); font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--faint); border:1px solid var(--rule-2);
+    border-radius:3px; padding:3px 8px;
+  }
+  .cfg-overlay{position:fixed; inset:0; z-index:60; display:flex; align-items:flex-start;
+    justify-content:center; padding:7vh 18px 48px; overflow:auto}
+  .cfg-overlay[hidden]{display:none}
+  .cfg-backdrop{position:fixed; inset:0; background:rgba(23,20,15,.45); border:0;
+    cursor:pointer}
+  .cfg-modal{position:relative; width:min(560px,100%);
+    background:var(--panel); border:1px solid var(--ink); border-radius:3px;
+    box-shadow:0 34px 64px -42px rgba(23,20,15,.95);
+    animation:rise .25s cubic-bezier(.2,.7,.3,1) both}
+  .cfg-modal-head{display:flex; align-items:center; gap:12px; padding:14px 16px;
+    border-bottom:1px solid var(--ink)}
+  .cfg-modal-head b{font-family:var(--serif); font-size:19px; font-weight:600;
+    letter-spacing:-.02em}
+  .cfg-close{margin-left:auto; font:inherit; font-size:15px; line-height:1; width:30px;
+    height:30px; border:1px solid var(--rule); border-radius:2px; background:none;
+    cursor:pointer; color:var(--muted);
+    transition:border-color .16s ease, color .16s ease}
+  .cfg-close:hover{border-color:var(--ink); color:var(--ink)}
+  .cfg-slot{padding:16px 18px 18px}
+  .cfg-slot .cfg-card{border:0; padding:0; margin:0; box-shadow:none; animation:none}
+  .cfg-card{
+    border:1px solid var(--rule-2); background:var(--panel);
+    padding:18px 20px 20px; margin-bottom:18px;
+    animation:rise .35s cubic-bezier(.2,.7,.3,1) both;
+  }
+  .cfg-pill[data-on="1"]{color:var(--done); border-color:#CFDFD4; background:var(--done-wash)}
+  .cfg-desc{font-size:12.5px; color:var(--ink-2); margin:0 0 16px; max-width:78ch;
+    line-height:1.6}
+  .cfg-desc .mono{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .cfg-grid{display:grid; grid-template-columns:minmax(0,1fr) 150px; gap:12px;
+    align-items:end}
+  .cfg-slot .cfg-cmd{margin-top:0}
+  .cfg-field{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .cfg-field > span{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--faint);
+  }
+  .cfg-field > span em{
+    font-family:var(--sans); font-style:normal; font-size:11.5px; letter-spacing:0;
+    text-transform:none; color:var(--faint);
+  }
+  .cfg-field input{
+    font:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--rule-2);
+    border-radius:3px; background:var(--paper); color:var(--ink); outline:0;
+  }
+  .cfg-field input:focus{border-color:var(--accent)}
+  .cfg-wide{grid-column:1 / -1}
+  .cfg-check{flex-direction:row; align-items:center; gap:8px; padding-bottom:8px}
+  .cfg-check > span{font-family:var(--sans); font-size:13px; letter-spacing:0;
+    text-transform:none; color:var(--ink)}
+  .cfg-actions{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:16px}
+  .cfg-actions button{
+    font:inherit; font-size:12.5px; font-weight:600; border:0; border-radius:3px;
+    padding:8px 15px; cursor:pointer; background:var(--ink); color:var(--paper);
+  }
+  .cfg-actions button:hover{background:var(--accent)}
+  .cfg-actions button.ghost{
+    background:transparent; color:var(--ink-2); border:1px solid var(--rule-2);
+  }
+  .cfg-actions button.ghost:hover{background:var(--paper); color:var(--ink)}
+  .cfg-msg{font-family:var(--mono); font-size:11.5px; color:var(--faint)}
+  .cfg-msg[data-tone="ok"]{color:var(--done)}
+  .cfg-msg[data-tone="bad"]{color:var(--held)}
+  .cfg-cmd{
+    font-family:var(--mono); font-size:11.5px; color:var(--ink-2);
+    background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+    padding:8px 10px; margin-top:9px; overflow-x:auto; white-space:nowrap;
+  }
+  @media (max-width:640px){
+    .cfg-grid{grid-template-columns:minmax(0,1fr)}
+    .cfg-check{padding-bottom:0}
+  }
+
+  /* the pairing code, shown here rather than only in the bridge's terminal */
+  .qr-box{
+    display:flex; gap:20px; align-items:flex-start; margin:14px 0 4px;
+    padding:14px; border:1px solid var(--rule-2); background:var(--paper);
+  }
+  .qr-box[hidden]{display:none}
+  .qr-img{
+    width:184px; height:184px; flex:none; background:#fff; padding:6px;
+    border:1px solid var(--rule-2);
+  }
+  .qr-img[hidden]{display:none}
+  .qr-side{min-width:0}
+  .qr-side b{display:block; font-size:13.5px; font-weight:600; margin-bottom:6px}
+  .qr-note{font-size:12.5px; color:var(--ink-2); margin:0 0 10px; max-width:48ch;
+    line-height:1.55}
+  .qr-note[data-tone="ok"]{color:var(--done)}
+  .qr-steps{margin:0; padding-left:17px; font-size:12.5px; color:var(--muted);
+    line-height:1.75}
+  .qr-steps[hidden]{display:none}
+  @media (max-width:640px){
+    .qr-box{flex-direction:column}
+    .qr-img{align-self:center}
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <aside class="rail">
+    <div class="mark">
+      <span class="glyph">W</span>
+      <span class="word">Work<i>Simplified</i></span>
+    </div>
+
+    <div>
+      <div class="rail-label">Console</div>
+      <nav class="tabs" role="tablist" aria-label="Views">
+        <button class="tab" id="tab-agent" role="tab" aria-selected="true"
+                aria-controls="panel-agent"><span class="n">01</span>BA Agent</button>
+        <button class="tab" id="tab-preview" role="tab" aria-selected="false"
+                aria-controls="panel-preview"><span class="n">02</span>Preview</button>
+        <button class="tab" id="tab-connectors" role="tab" aria-selected="false"
+                aria-controls="panel-connectors"><span class="n">03</span>Connectors</button>
+      </nav>
+    </div>
+
+    <div class="rail-foot">
+      <span class="dot" id="dot" data-state="idle"></span>
+      <span class="status-text" id="statusText">Ready</span>
+      <span class="elapsed mono" id="elapsed"></span>
+    </div>
+  </aside>
+
+  <div class="content">
+
+  <div class="decision" id="decision" hidden role="region"
+       aria-label="Action needed to continue the run">
+    <div class="decision-in">
+      <div class="decision-say">
+        <span class="eyebrow" id="decisionEyebrow">Action needed</span>
+        <span class="what" id="decisionWhat" aria-live="polite"></span>
+        <span class="why" id="decisionWhy"></span>
+        <span class="meta mono" id="decisionMeta"></span>
+      </div>
+      <div class="grow">
+        <input id="guidance" placeholder="Or ask for a change first…">
+        <button type="button" class="ghost" id="send">Send guidance</button>
+        <button type="button" class="ghost" id="abort">Stop</button>
+        <button type="button" id="approve" data-answer="approve">Approve and continue</button>
+        <span class="busy" id="decisionBusy" hidden>sending…</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="panel" id="panel-agent" role="tabpanel" aria-labelledby="tab-agent">
+
+  <section id="composer">
+
+    <header class="masthead">
+      <div class="kicker">
+        <span>WorkSimplified</span><span class="sep">/</span>
+        <span>Delivery pipeline</span><span class="line"></span>
+        <span>BA → Frappe</span>
+      </div>
+      <h1 class="display">One brief in. <em>Five documents out</em> — and a system that runs.</h1>
+      <p class="deck">Describe the work, attach what you already have, and five agents
+        write the <strong>BRD, project plan, functional spec and technical design</strong>
+        — each one gated and traceable — then configure and verify a real
+        <strong>Frappe</strong> build. You watch every stage as it happens.</p>
+    </header>
+
+    <div class="resume" id="resume" hidden>
+      <span>A run is already in progress for this browser.</span>
+      <span class="id mono" id="resumeId"></span>
+      <button type="button" id="resumeBtn">Watch it</button>
+    </div>
+
+    <div class="composer-wrap">
+      <div class="card-label"><span>The brief</span>
+        <span class="count mono" id="charCount">0</span></div>
+      <form id="form">
+        <div class="box">
+          <textarea class="goal" id="goal" rows="3"
+            placeholder="What should the system do, who uses it, and what does it replace?"></textarea>
+          <div class="chips" id="chips"></div>
+          <div class="tools">
+            <button type="button" class="icon-btn" id="mic" title="Dictate" aria-label="Dictate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="2" width="6" height="11" rx="3"/>
+                <path d="M5 10a7 7 0 0 0 14 0M12 19v3"/>
+              </svg>
+            </button>
+            <label class="icon-btn" for="files" title="Attach documents" aria-label="Attach documents">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 6-8.5 8.5a3.5 3.5 0 0 0 5 5L20 12a5 5 0 0 0-7-7L5.5 12.5a7 7 0 0 0 10 10"/>
+              </svg>
+            </label>
+            <input id="files" type="file" multiple hidden
+                   accept=".txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.pdf,.docx">
+            <button class="start" id="start" type="submit">Start the pipeline</button>
+          </div>
+        </div>
+        <p class="hint">Documents: text, .csv, .json, .yaml, <strong>PDF</strong> and
+          <strong>Word (.docx)</strong> — up to 5 MB each. A scanned PDF needs OCR first.
+          Drop them on the box, or press <kbd>⌘</kbd> <kbd>↵</kbd> to start.</p>
+        <p class="note" id="note" hidden></p>
+      </form>
+    </div>
+
+    <div class="section-head">
+      <h2>Start from a real brief</h2>
+      <span class="aside">click to load</span>
+    </div>
+    <div class="examples">
+      <button type="button" class="example" data-brief="Small manufacturing ERP for a 60-person factory: items with BOMs, work orders, job costing and stock valuation across two warehouses. Replaces Excel and a legacy Access database. 25 users across production, stores and finance.">
+        <span class="tag">Manufacturing</span>
+        <span class="line">Small factory ERP — BOMs, work orders, stock</span>
+        <span class="sub">25 users · replaces Excel + Access</span>
+      </button>
+      <button type="button" class="example" data-brief="Field service app for 40 technicians: schedule jobs, route them by area, capture parts used and customer sign-off on mobile, then invoice from the completed job. Supervisor dashboard for SLA breaches.">
+        <span class="tag">Services</span>
+        <span class="line">Field service for 40 technicians</span>
+        <span class="sub">jobs · routes · sign-off · invoicing</span>
+      </button>
+      <button type="button" class="example" data-brief="Order-to-cash on Frappe: quotation to sales order to delivery note to sales invoice to payment reconciliation, with credit limits per customer and a dunning report for overdue invoices.">
+        <span class="tag">Finance</span>
+        <span class="line">Order-to-cash, end to end</span>
+        <span class="sub">quote → cash, with credit limits</span>
+      </button>
+    </div>
+
+    <div class="section-head">
+      <h2>What comes out</h2>
+      <span class="aside">five stages, every one gated</span>
+    </div>
+    <div class="chain">
+      <div class="link"><span class="n">01</span><span class="t">BA</span>
+        <span class="d">BRD and BA package from your brief and documents</span></div>
+      <div class="link"><span class="n">02</span><span class="t">Project</span>
+        <span class="d">Scope, WBS, schedule, RACI and RAID</span></div>
+      <div class="link"><span class="n">03</span><span class="t">Functional</span>
+        <span class="d">FR catalogue, use cases, validations, traceability</span></div>
+      <div class="link"><span class="n">04</span><span class="t">Technical</span>
+        <span class="d">Architecture, APIs, data schema, NFRs, build tasks</span></div>
+      <div class="link"><span class="n">05</span><span class="t">Frappe</span>
+        <span class="d">Configured on your site, then read back and verified</span></div>
+    </div>
+    <p class="footnote">Each stage must pass its gate before the next one starts.
+      Anything that slips is carried forward and reported — nothing is quietly dropped.</p>
+
+  </section>
+
+  <section id="run" hidden>
+
+    <div class="run-head">
+      <div class="run-kicker">
+        <span class="pill" id="runPill" data-state="active">RUNNING</span>
+        <span>Run</span>
+        <span class="mono" id="wsId"></span>
+      </div>
+      <div class="brief-line">
+        <p class="text" id="briefText"></p>
+      </div>
+
+      <div class="run-stats">
+        <div class="stat"><span class="k">Elapsed</span>
+          <span class="v" id="elapsedBig">0:00</span></div>
+        <div class="stat"><span class="k">Stage</span>
+          <span class="v" id="stageNow">—</span></div>
+        <div class="stat"><span class="k">State</span>
+          <span class="v small" id="runState">—</span></div>
+        <div class="overall">
+          <span class="k" style="font-size:10.5px;letter-spacing:.14em;
+            text-transform:uppercase;color:var(--faint)">Overall
+            <b class="mono" id="overallPct" style="color:var(--ink);font-weight:500">0%</b></span>
+          <div class="bar"><i id="overallBar"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip" id="strip"></div>
+    <div class="docs" id="docs"></div>
+
+    <ol class="ledger" id="ledger"></ol>
+
+    <div class="activity">
+      <div class="activity-head">Activity
+        <span class="count mono" id="evCount">0</span></div>
+      <ol class="events" id="events" aria-live="polite">
+        <li class="empty">Waiting for the first step…</li>
+      </ol>
+    </div>
+
+  </section>
+
+  </section>
+
+  <section class="panel" id="panel-preview" role="tabpanel"
+           aria-labelledby="tab-preview" hidden>
+
+    <header class="pv-head">
+      <div class="kicker">
+        <span>Preview</span><span class="sep">/</span><span>the real path</span>
+        <span class="line"></span><span id="pvState">no run yet</span>
+      </div>
+      <h2 class="panel-title">How a brief becomes a Frappe site</h2>
+    </header>
+
+    <div class="pv-meta" id="pvMeta" hidden>
+      <span class="pv-chip"><b>Status</b><i id="mStatus">—</i></span>
+      <span class="pv-chip"><b>Gate</b><i id="mGate">—</i></span>
+      <span class="pv-chip"><b>Pass</b><i id="mIter">—</i></span>
+      <span class="pv-chip"><b>Carried</b><i id="mCarried">—</i></span>
+      <span class="pv-chip"><b>Open gaps</b><i id="mGaps">—</i></span>
+    </div>
+
+    <div class="cycle-live" id="cycleLive" hidden>
+      <span class="pulse"></span>
+      <span class="txt"><span class="cap" id="cycleCap"></span>
+        <em id="cycleEvent"></em></span>
+    </div>
+
+    <div class="section-head"><h2>The agents</h2>
+      <span class="aside" id="pvAside">click a block to open it</span></div>
+    <div class="blocks" id="blocks"></div>
+    <button class="validbar" id="validBar" type="button" aria-expanded="false" hidden>
+      <span class="vname">Final validation</span>
+      <span class="vverdict" id="validVerdict">not run</span>
+      <span class="vcov" id="validCov"></span>
+      <span class="vhint">open ↓</span>
+    </button>
+    <div class="detail" id="agentDetail"></div>
+  </section>
+
+  <section class="panel" id="panel-connectors" role="tabpanel"
+           aria-labelledby="tab-connectors" hidden>
+
+    <h2 class="panel-title">Connectors</h2>
+    <p class="cfg-intro">Every channel drives the same pipeline and the same project.
+      Settings are written to <span class="mono" id="cfgEnvPath">…</span> and applied
+      to the running service straight away.</p>
+
+    <div class="cfg-tiles">
+      <button class="cfg-tile" id="tileTelegram" type="button" aria-haspopup="dialog">
+        <span class="cfg-logo" aria-hidden="true"><svg viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg></span>
+        <span class="cfg-tbody">
+          <span class="cfg-trow"><b class="cfg-tname">Telegram</b>
+            <span class="cfg-pill" id="tgPill" data-on="0">off</span></span>
+          <span class="cfg-state" id="tgState">checking…</span>
+          <span class="cfg-cta">configure →</span>
+        </span>
+      </button>
+      <button class="cfg-tile" id="tileWhatsapp" type="button" aria-haspopup="dialog">
+        <span class="cfg-logo" aria-hidden="true"><svg viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></span>
+        <span class="cfg-tbody">
+          <span class="cfg-trow"><b class="cfg-tname">WhatsApp</b>
+            <span class="cfg-pill" id="waPill" data-on="0">off</span></span>
+          <span class="cfg-state" id="waState">checking…</span>
+          <span class="cfg-cta">configure →</span>
+        </span>
+      </button>
+    </div>
+
+    <div id="cfgPool" hidden>
+      <article class="cfg-card" id="cfgTelegram">
+        <p class="cfg-desc">Make a bot with <span class="mono">@BotFather</span> and paste
+          the token it sends you. The worker polls Telegram outbound, so nothing has to
+          be publicly reachable.</p>
+        <div class="cfg-grid">
+          <label class="cfg-field cfg-wide">
+            <span>Bot token <em>— the saved one is never shown; leave this empty to keep it</em></span>
+            <input id="tgToken" type="password" autocomplete="off" spellcheck="false"
+                   placeholder="123456789:AAF-…">
+          </label>
+          <label class="cfg-field">
+            <span>Poll timeout (seconds)</span>
+            <input id="tgTimeout" type="number" min="1" max="60" step="1" value="25">
+          </label>
+          <label class="cfg-field cfg-check">
+            <input id="tgEnabled" type="checkbox"> <span>Listen for messages</span>
+          </label>
+        </div>
+        <div class="cfg-actions">
+          <button type="button" id="tgSave">Save Telegram</button>
+          <button type="button" class="ghost" id="tgClear">Remove token</button>
+          <span class="cfg-msg" id="tgMsg"></span>
+        </div>
+      </article>
+
+      <article class="cfg-card" id="cfgWhatsapp">
+        <div class="cfg-cmd" id="waCmd">cd my_agents/connectors/whatsapp_bridge &amp;&amp; npm install &amp;&amp; node index.js</div>
+        <div class="qr-box" id="waQrBox" hidden>
+          <img class="qr-img" id="waQrImg" alt="WhatsApp pairing code">
+          <div class="qr-side">
+            <b id="waQrTitle">Scan to link this number</b>
+            <p class="qr-note" id="waQrNote"></p>
+            <ol class="qr-steps" id="waQrSteps">
+              <li>Open WhatsApp on the phone you want to run this number.</li>
+              <li>Settings → Linked devices → Link a device.</li>
+              <li>Point it at this code. It refreshes itself — no need to reload.</li>
+              <li>Then tick “Accept WhatsApp messages” below and save.</li>
+            </ol>
+          </div>
+        </div>
+        <div class="cfg-grid">
+          <label class="cfg-field cfg-wide">
+            <span>Bridge address</span>
+            <input id="waUrl" type="text" spellcheck="false" placeholder="http://127.0.0.1:8081">
+          </label>
+          <label class="cfg-field cfg-wide">
+            <span>Who may message it</span>
+            <input id="waAllowed" type="text" spellcheck="false"
+                   placeholder="919812345678, 919800000000 — or * for anyone">
+          </label>
+          <label class="cfg-field cfg-check">
+            <input id="waEnabled" type="checkbox"> <span>Accept WhatsApp messages</span>
+          </label>
+        </div>
+        <div class="cfg-actions">
+          <button type="button" id="waSave">Save WhatsApp</button>
+          <span class="cfg-msg" id="waMsg"></span>
+        </div>
+      </article>
+    </div>
+
+    <div class="cfg-overlay" id="cfgOverlay" hidden>
+      <div class="cfg-backdrop" data-cfg-close></div>
+      <div class="cfg-modal" role="dialog" aria-modal="true" aria-labelledby="cfgModalTitle">
+        <div class="cfg-modal-head">
+          <b id="cfgModalTitle">Telegram</b>
+          <button type="button" class="cfg-close" id="cfgClose"
+                  aria-label="Close">✕</button>
+        </div>
+        <div class="cfg-slot" id="cfgSlot"></div>
+      </div>
+    </div>
+  </section>
+
+  </div>
+
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const DOC_FOR = {BA:"brd", PROJECT:"project_plan", FUNCTIONAL:"functional_spec",
+                   TECHNICAL:"tech_design", FRAPPE:"frappe_setup"};
+  const NAMES = {BA:"BA", PROJECT:"Project", FUNCTIONAL:"Functional",
+                 TECHNICAL:"Technical", FRAPPE:"Frappe", VALIDATION:"Validation"};
+  const WORD = {done:"done", active:"working", carried:"carried", held:"held",
+                queued:"queued"};
+  const PIPE = ["BA","PROJECT","FUNCTIONAL","TECHNICAL","FRAPPE","VALIDATION"];
+
+  let files = [];
+  let workspace = "";
+  let timer = null;
+  let lastKey = "";
+  let lastDocsKey = "";
+
+  const goal = $("goal");
+  const note = $("note");
+  const say = (text, bad) => {
+    note.textContent = text || "";
+    note.hidden = !text;
+    note.classList.toggle("bad", !!bad);
+  };
+
+  // ------------------------------------------------------------ left tabs
+  const PANELS = {agent: "panel-agent", preview: "panel-preview",
+                  connectors: "panel-connectors"};
+  function showTab(name) {
+    Object.keys(PANELS).forEach((key) => {
+      $(PANELS[key]).hidden = key !== name;
+      $("tab-" + key).setAttribute("aria-selected", String(key === name));
+    });
+    if (name === "connectors") loadConnectors();
+    // only poll the pairing code while the tab is on screen
+    watchWhatsappQr(name === "connectors");
+  }
+  $("tab-agent").addEventListener("click", () => showTab("agent"));
+  $("tab-preview").addEventListener("click", () => showTab("preview"));
+  $("tab-connectors").addEventListener("click", () => showTab("connectors"));
+
+  // ---------------------------------------------------------- brief length
+  const charCount = $("charCount");
+  const countChars = () => { charCount.textContent = String(goal.value.length); };
+  goal.addEventListener("input", countChars);
+  countChars();
+
+  // ------------------------------------------------------------- examples
+  document.querySelectorAll(".example").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      goal.value = btn.dataset.brief || "";
+      countChars();
+      goal.focus();
+      goal.setSelectionRange(goal.value.length, goal.value.length);
+      window.scrollTo({top: 0, behavior: "smooth"});
+    });
+  });
+
+  // ------------------------------------------------------------ attachments
+  function renderChips() {
+    const box = $("chips");
+    box.textContent = "";
+    files.forEach((file, i) => {
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      const name = document.createElement("span");
+      name.textContent = file.name;
+      const size = document.createElement("span");
+      size.className = "size";
+      size.textContent = Math.max(1, Math.round(file.size / 1024)) + "k";
+      const drop = document.createElement("button");
+      drop.type = "button";
+      drop.className = "drop";
+      drop.textContent = "×";
+      drop.title = "Remove " + file.name;
+      drop.addEventListener("click", () => { files.splice(i, 1); renderChips(); });
+      chip.append(name, size, drop);
+      box.append(chip);
+    });
+  }
+
+  $("files").addEventListener("change", (e) => {
+    files = files.concat(Array.from(e.target.files || []));
+    e.target.value = "";
+    renderChips();
+  });
+
+  // drop documents straight onto the composer
+  const box = document.querySelector(".box");
+  ["dragenter", "dragover"].forEach((name) => box.addEventListener(name, (e) => {
+    e.preventDefault();
+    box.classList.add("hot");
+  }));
+  ["dragleave", "drop"].forEach((name) => box.addEventListener(name, (e) => {
+    e.preventDefault();
+    box.classList.remove("hot");
+  }));
+  box.addEventListener("drop", (e) => {
+    files = files.concat(Array.from(e.dataTransfer.files || []));
+    renderChips();
+  });
+
+  goal.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      $("form").requestSubmit();
+    }
+  });
+
+  // -------------------------------------------------------------- dictation
+  const mic = $("mic");
+  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Speech) {
+    mic.disabled = true;
+    mic.title = "This browser has no speech recognition. Chrome and Edge support it.";
+  } else {
+    const rec = new Speech();
+    rec.interimResults = true;
+    rec.continuous = false;
+    mic.addEventListener("click", () => {
+      if (mic.dataset.rec === "1") { rec.stop(); return; }
+      try { rec.start(); } catch (e) { say("Could not start the microphone.", true); }
+    });
+    rec.addEventListener("start", () => {
+      mic.dataset.rec = "1"; mic.title = "Stop dictating";
+    });
+    rec.addEventListener("end", () => {
+      mic.dataset.rec = "0"; mic.title = "Dictate";
+    });
+    rec.addEventListener("error", (e) => {
+      mic.dataset.rec = "0";
+      say(e.error === "not-allowed"
+        ? "Microphone access is blocked. Allow it for this site, then try again."
+        : "Dictation stopped (" + e.error + ").", true);
+    });
+    rec.addEventListener("result", (e) => {
+      let heard = "";
+      for (let i = 0; i < e.results.length; i++) heard += e.results[i][0].transcript;
+      const base = goal.value.replace(/\s+$/, "");
+      goal.value = (base ? base + " " : "") + heard.trim();
+      countChars();
+    });
+  }
+
+  // ------------------------------------------------------------------ start
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = goal.value.trim();
+    if (!text) { say("Describe what you want built, then start."); goal.focus(); return; }
+    say("");
+    const start = $("start");
+    start.disabled = true;
+    start.textContent = "Starting…";
+
+    const form = new FormData();
+    form.append("goal", text);
+    form.append("mode", "generation");
+    files.forEach((f) => form.append("files", f, f.name));
+
+    try {
+      const r = await fetch("/intake", {method: "POST", body: form});
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok || body.error) throw new Error(body.error || ("HTTP " + r.status));
+      workspace = body.workspace || "";
+      if (!workspace) throw new Error("the service did not return a workspace");
+
+      const rejected = body.rejected || [];
+      if (rejected.length) {
+        say(rejected.map((x) => (x.name || x.file || "file") + " — " + x.error)
+              .join(" · "), true);
+      }
+      enterRun(text, workspace);
+      await poll();
+      timer = setInterval(poll, 1200);
+    } catch (err) {
+      start.disabled = false;
+      start.textContent = "Start the pipeline";
+      say("Could not start: " + err.message, true);
+    }
+  });
+
+  function enterRun(text, ws) {
+    $("briefText").textContent = text.replace(/\s+/g, " ");
+    $("wsId").textContent = ws;
+    $("composer").hidden = true;
+    $("resume").hidden = true;
+    $("run").hidden = false;
+    setStatus("active", "Running");
+  }
+
+  // ---------------------------------------------- an earlier run, still live
+  async function checkResume() {
+    try {
+      const r = await fetch("/api/progress", {cache: "no-store"});
+      if (!r.ok) return;
+      const data = await r.json();
+      renderPreview(data);
+      if (!data.exists || !data.workspace || data.done) return;
+      if (!(data.stages || []).some((s) => s.state !== "queued")) return;
+      workspace = data.workspace;
+      $("resumeId").textContent = data.workspace;
+      $("resume").hidden = false;
+      $("dot").dataset.state = "active";
+      $("statusText").textContent = "Run in progress";
+      $("elapsed").textContent = data.elapsed_s ? clock(data.elapsed_s) : "";
+    } catch (e) { /* nothing to resume */ }
+  }
+  $("resumeBtn").addEventListener("click", async () => {
+    if (!workspace) return;
+    $("composer").hidden = true;
+    $("resume").hidden = true;
+    $("run").hidden = false;
+    $("briefText").textContent = "Run resumed from this browser's last workspace.";
+    $("wsId").textContent = workspace;
+    setStatus("active", "Running");
+    await poll();
+    if (!timer) timer = setInterval(poll, 1200);
+  });
+
+  // ---------------------------------------------------------------- render
+  function setStatus(state, word) {
+    $("dot").dataset.state = state;
+    $("statusText").textContent = word;
+  }
+
+  function clock(seconds) {
+    const s = Math.max(0, seconds | 0);
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function produced(stage, events) {
+    const want = DOC_FOR[stage];
+    if (!want) return "";
+    for (let i = events.length - 1; i >= 0; i--) {
+      const ev = events[i];
+      if (ev.type !== "artifact_created") continue;
+      if (ev.summary.split(" ")[0] === want) {
+        const m = ev.summary.match(/\((\d+) chars\)/);
+        return m ? (Math.round(Number(m[1]) / 100) / 10) + "k" : "written";
+      }
+    }
+    return "";
+  }
+
+  function renderStrip(data) {
+    const box = $("strip");
+    box.textContent = "";
+    PIPE.forEach((name, i) => {
+      const stage = (data.stages || []).find((s) => s.name === name) || {state: "queued"};
+      const el = document.createElement("div");
+      el.className = "stop";
+      el.dataset.state = stage.state;
+      const knob = document.createElement("span"); knob.className = "knob";
+      const lbl = document.createElement("span"); lbl.className = "lbl";
+      lbl.textContent = String(i + 1).padStart(2, "0");
+      const nm = document.createElement("span"); nm.className = "nm";
+      nm.textContent = NAMES[name] || name;
+      el.append(knob, lbl, nm);
+      box.append(el);
+    });
+  }
+
+  function renderOverall(data) {
+    let done = 0, total = 0, cleared = 0, stages = 0;
+    (data.stages || []).forEach((s) => {
+      if (s.name === "VALIDATION") return;
+      stages += 1;
+      if (s.state === "done") cleared += 1;
+      done += s.sections_done || 0;
+      total += s.sections_total || 0;
+    });
+    let pct = 0;
+    if (data.status === "SUCCESS") pct = 100;
+    else if (total) pct = Math.round((done / total) * 100);
+    pct = Math.max(0, Math.min(100, pct));
+    $("overallPct").textContent = pct + "% · " + cleared + "/" + stages + " stages";
+    $("overallBar").style.width = pct + "%";
+    $("stageNow").textContent = NAMES[data.stage] || (data.done ? "complete" : "—");
+  }
+
+  function kchars(n) {
+    return (Math.round(Number(n || 0) / 100) / 10) + "k";
+  }
+
+  // uploaded_<name>_<yyyymmdd>_<hhmmss>.md -> <name>
+  function givenName(file) {
+    return String(file || "")
+      .replace(/^uploaded_/, "")
+      .replace(/_\d{8}_\d{6}\.md$/, "")
+      .replace(/\.md$/, "")
+      .slice(0, 30);
+  }
+
+  function renderDocs(data) {
+    const seen = new Map();
+    (data.events || []).forEach((ev) => {
+      if (ev.type !== "artifact_created") return;
+      const head = (ev.summary || "").split("(")[0].trim();
+      if (!head || seen.has(head)) return;
+      const m = (ev.summary || "").match(/\((\d+) chars\)/);
+      seen.set(head, m ? head + " · " + kchars(m[1]) : head);
+    });
+    const sources = data.sources || [];
+    const key = Array.from(seen.keys()).join("|") + "//"
+      + sources.map((s) => s.file).join(",");
+    if (key === lastDocsKey) return;
+    lastDocsKey = key;
+    const box = $("docs");
+    box.textContent = "";
+    // what the customer handed over comes first — it is the input, not an output
+    sources.forEach((src) => {
+      const el = document.createElement("span");
+      el.className = "doc given";
+      el.title = "you provided " + (src.name || src.file);
+      el.textContent = "given " + givenName(src.file) + " · " + kchars(src.chars);
+      box.append(el);
+    });
+    seen.forEach((label) => {
+      const el = document.createElement("span");
+      el.className = "doc";
+      el.textContent = label;
+      box.append(el);
+    });
+  }
+
+  function renderLedger(data) {
+    const events = data.events || [];
+    const list = $("ledger");
+    list.textContent = "";
+    (data.stages || []).forEach((s, i) => {
+      const row = document.createElement("li");
+      row.className = "row";
+      row.dataset.state = s.state;
+
+      const code = document.createElement("span");
+      code.className = "code mono";
+      code.textContent = String(i + 1).padStart(2, "0");
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = NAMES[s.name] || s.name;
+
+      const track = document.createElement("span");
+      track.className = "track";
+      const fill = document.createElement("span");
+      fill.className = "fill";
+      const pct = s.sections_total
+        ? Math.round((s.sections_done / s.sections_total) * 100)
+        : (s.state === "done" ? 100 : 0);
+      fill.style.width = pct + "%";
+      track.append(fill);
+
+      const meta = document.createElement("span");
+      meta.className = "meta mono";
+      meta.textContent = s.sections_total
+        ? s.sections_done + "/" + s.sections_total
+        : produced(s.name, events);
+
+      const verdict = document.createElement("span");
+      verdict.className = "verdict mono";
+      verdict.textContent = WORD[s.state] || s.state;
+
+      row.append(code, name, track, meta, verdict, downloadCell(data, s, row));
+      list.append(row);
+    });
+  }
+
+  function downloadUrl(workspaceId, file) {
+    return "/api/download?workspace=" + encodeURIComponent(workspaceId || workspace)
+      + "&name=" + encodeURIComponent(file);
+  }
+
+  function closeDownloads() {
+    document.querySelectorAll(".dl-pop:not([hidden])").forEach((p) => { p.hidden = true; });
+    document.querySelectorAll('.dl-btn[aria-expanded="true"]').forEach(
+      (b) => b.setAttribute("aria-expanded", "false"));
+    document.querySelectorAll('.row[data-open="1"]').forEach((r) => { r.dataset.open = ""; });
+  }
+
+  // The outputs of one stage: a button on the row, the files behind it. Nothing
+  // is offered before the phase actually wrote something to disk.
+  function downloadCell(data, stage, row) {
+    const cell = document.createElement("span");
+    cell.className = "dl";
+    const outs = (data.outputs || {})[stage.name] || [];
+    if (!outs.length) return cell;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dl-btn";
+    btn.textContent = "\u2193 " + outs.length;
+    btn.title = "download what " + (NAMES[stage.name] || stage.name) + " produced";
+    btn.setAttribute("aria-expanded", "false");
+
+    const pop = document.createElement("div");
+    pop.className = "dl-pop";
+    pop.hidden = true;
+    pop.addEventListener("click", (e) => e.stopPropagation());
+    outs.forEach((f) => {
+      const a = document.createElement("a");
+      a.href = downloadUrl(data.workspace, f.name);
+      a.setAttribute("download", "");
+      const nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = f.name;
+      const sz = document.createElement("span");
+      sz.className = "sz";
+      sz.textContent = kchars(String(f.bytes || 0));
+      a.append(nm, sz);
+      pop.append(a);
+    });
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const willOpen = pop.hidden;
+      closeDownloads();
+      pop.hidden = !willOpen;
+      btn.setAttribute("aria-expanded", String(willOpen));
+      row.dataset.open = willOpen ? "1" : "";
+    });
+    cell.append(btn, pop);
+    return cell;
+  }
+  document.addEventListener("click", closeDownloads);
+
+  function renderEvents(data) {
+    const events = data.events || [];
+    const last = events.length ? events[events.length - 1] : null;
+    const key = events.length + "|" + (last ? last.ts : "");
+    if (key === lastKey) return;
+    lastKey = key;
+
+    const list = $("events");
+    list.textContent = "";
+    if (!events.length) {
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "Waiting for the first step…";
+      list.append(li);
+      return;
+    }
+    events.forEach((ev) => {
+      const li = document.createElement("li");
+      li.className = "ev fade";
+      li.dataset.kind = ev.type;
+      const t = document.createElement("span");
+      t.className = "t";
+      t.textContent = (ev.ts || "").slice(11, 19) || "--:--:--";
+      const k = document.createElement("span");
+      k.className = "k";
+      k.textContent = ev.type;
+      const s = document.createElement("span");
+      s.className = "s";
+      s.textContent = ev.summary;
+      li.append(t, k, s);
+      list.append(li);
+    });
+    list.scrollTop = list.scrollHeight;
+    $("evCount").textContent = String(events.length);
+  }
+
+  // ---------------------------------------------------------------- preview
+  // The stage table below mirrors shared/orch_nodes.py, shared/sections.py and
+  // shared/gates.py: what each stage writes, how many gate checks it must clear
+  // and what it hands to the next one. Live state is laid over it from the API.
+  const SECTION_TITLE = {
+    objectives: "objectives & executive summary", scope: "scope in / scope out",
+    stakeholders: "stakeholders & actors", asis_tobe: "as-is / to-be process",
+    business_case: "business case & options", stories: "user stories & acceptance",
+    rules: "business rules", datarisks: "data, risks & KPIs",
+    solution_assessment: "solution assessment & gaps",
+    objective: "objective & success criteria", wbs: "work breakdown structure",
+    schedule: "milestones & critical path", raci_raid: "RACI & RAID log",
+    overview: "overview & scope", fr_catalog: "functional requirements",
+    use_cases: "use cases & alternates", validations_data: "validations & data model",
+    traceability: "traceability matrix", architecture: "architecture & decisions",
+    apis: "API contracts", data: "data schema", nfr_deploy: "NFRs & deployment",
+    build_tasks: "technical build tasks",
+  };
+  const DIAGRAM = {BA: "flow", PROJECT: "gantt", FUNCTIONAL: "functional",
+                   TECHNICAL: "sequence + architecture"};
+  const STAGE_ACTOR = {BA: "ba_agent", PROJECT: "project_agent",
+                       FUNCTIONAL: "functional_agent", TECHNICAL: "technical_agent",
+                       FRAPPE: "frappe_agent", VALIDATION: "orchestrator"};
+
+  // One entry per agent. Mirrors shared/orch_nodes.py, shared/sections.py and
+  // shared/gates.py: what it is, what it reads, what it writes, what its gate
+  // demands and what it hands on. Live state is laid over the top from the API.
+  const STAGE_SPEC = {
+    BA: {
+      title: "Business Analyst", role: "writes the requirements baseline",
+      gate: "BA_GATE", checks: 28, out: "brd_assembled.md", hands: "project plan",
+      does: "Reads your brief and anything you attached, then writes what the system "
+          + "must do and why: scope, stakeholders, the as-is and to-be process, the "
+          + "options with a recommendation, user stories with acceptance criteria, "
+          + "business rules and the risks. Everything downstream is measured against "
+          + "this document.",
+      reads: ["your brief and every attached document",
+              "recorded decisions, assumptions and open questions",
+              "the gate's findings, on a revision pass"],
+      gateDesc: "28 checks — scope in/out pairs, an OPT-n options table with exactly "
+              + "one recommendation, ≥3 US and ≥3 BR ids, quantified benefits, and a "
+              + "solution coverage table with readiness dimensions.",
+      sections: ["objectives", "scope", "stakeholders", "asis_tobe", "business_case",
+                 "stories", "rules", "datarisks", "solution_assessment"],
+    },
+    PROJECT: {
+      title: "Project", role: "turns the BRD into a plan",
+      gate: "PROJECT_GATE", checks: 14, out: "project_plan_assembled.md",
+      hands: "functional spec",
+      does: "Takes the gated BRD and plans the delivery: objective and success "
+          + "criteria, a work breakdown of T-xxx tasks with owners and estimates, "
+          + "milestones with dependencies and a critical path, plus a RACI matrix "
+          + "and a RAID log.",
+      reads: ["brd_assembled.md in full", "the assembled BA package",
+              "decisions, risks and open questions carried from BA"],
+      gateDesc: "14 checks — ≥5 dated T-tasks with ISO dates and dependencies, ≥3 "
+              + "milestones, a named critical path, a RACI with a R and an A, and "
+              + "RAID rows carrying severity, owner and a review date.",
+      sections: ["objective", "wbs", "schedule", "raci_raid"],
+    },
+    FUNCTIONAL: {
+      title: "Functional", role: "specifies behaviour in detail",
+      gate: "FUNCTIONAL_GATE", checks: 13, out: "functional_spec_assembled.md",
+      hands: "technical design",
+      does: "Writes the specification a build can be measured against: the FR "
+          + "catalogue with MoSCoW priorities, use cases with alternate and exception "
+          + "flows, validation rules with error codes, the data model, and the "
+          + "traceability matrix back to the BRD.",
+      reads: ["brd_assembled.md", "project_plan_assembled.md",
+              "carried-forward gaps recorded by the BA gate"],
+      gateDesc: "13 checks — ≥5 FR ids with priorities, every UC with actor, "
+              + "precondition, postcondition and an alternate flow, ≥3 E-xxx error "
+              + "codes, and a traceability matrix.",
+      sections: ["overview", "fr_catalog", "use_cases", "validations_data",
+                 "traceability"],
+    },
+    TECHNICAL: {
+      title: "Technical", role: "designs the system",
+      gate: "TECHNICAL_GATE", checks: 14, out: "tech_design_assembled.md",
+      hands: "the Frappe build",
+      does: "Designs the thing to be built: architecture and the decisions behind it, "
+          + "at least three API contracts with response codes, a typed data schema "
+          + "with keys, NFRs, security and deployment, and build tasks that each name "
+          + "the FR they cover.",
+      reads: ["brd_assembled.md", "project_plan_assembled.md",
+              "functional_spec_assembled.md"],
+      gateDesc: "14 checks — components and decisions, ≥3 endpoints with codes, typed "
+              + "columns and keys, security and deployment, and every FR reappearing "
+              + "in the build tasks (anything not built is marked deferred).",
+      sections: ["architecture", "apis", "data", "nfr_deploy", "build_tasks"],
+    },
+    FRAPPE: {
+      title: "Frappe", role: "builds it on the live site",
+      gate: "FRAPPE_GATE", checks: 10, out: "frappe_setup_assembled.md",
+      hands: "final validation",
+      does: "Works on the site rather than in prose: creates the doctypes, workflows, "
+          + "roles, permissions and workspace, seeds records from the plan, runs smoke "
+          + "tests, and records a read-back of every object as evidence — which is "
+          + "exactly what its gate re-checks.",
+      reads: ["functional_spec_assembled.md", "tech_design_assembled.md",
+              "the WBS tasks and dates", "the live Frappe site"],
+      gateDesc: "10 checks, 4 required — project created, objects verified, doctypes "
+              + "verified, tasks created. Workflows, FR trace, timeline and "
+              + "dependencies are advisory: they are recorded as gaps, not failures.",
+      sections: [],
+    },
+    VALIDATION: {
+      title: "Validation", role: "the last word",
+      gate: "VALIDATION", checks: 6, out: "a pass / fail verdict",
+      hands: "nothing — this is the end",
+      does: "Not an agent — a function. It re-runs all five gates against the "
+          + "documents now on disk, rejects leftover placeholder text, and traces "
+          + "every business rule, user story and functional requirement to something "
+          + "downstream. Pass and the run is SUCCESS.",
+      reads: ["all five assembled artifacts", "the Frappe evidence trail",
+              "the coverage counts across BR / US / FR"],
+      gateDesc: "6 checks — all_gates, frappe_stage, no_stubs, br_fully_covered, "
+              + "us_covered, fr_covered. A failure files a change request back to the "
+              + "stage that owns it instead of guessing.",
+      sections: [],
+    },
+  };
+  const STAGE_NOTE = {
+    FRAPPE: "No section plan — one pass against the live site, each object recorded "
+          + "as evidence the gate can re-read.",
+    VALIDATION: "Not an agent — a function that re-runs all five gates and the "
+              + "requirement trace.",
+  };
+
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  };
+  const stripList = (text) => text.replace(/^\[/, "").replace(/\]$/, "")
+    .split(/,\s*(?=['"])/).map((x) => x.replace(/^['"]|['"]$/g, "").trim())
+    .filter(Boolean);
+  const cut = (text, n) => (text.length > n ? text.slice(0, n - 1).trimEnd() + "…" : text);
+
+  function gateFacts(name, events) {
+    const spec = STAGE_SPEC[name] || {};
+    const f = {checks: spec.checks || 0, verdict: "", detail: ""};
+    events.forEach((ev) => {
+      if (ev.summary.indexOf(name + " gate") !== 0) return;
+      if (ev.type === "gate_passed") {
+        const m = ev.summary.match(/\((\d+) checks\)/);
+        if (m) f.checks = Number(m[1]);
+        f.verdict = "passed";
+        f.detail = "";
+      } else if (ev.type === "gate_failed") {
+        f.verdict = "failed";
+        f.detail = ev.summary.replace(/^[\s\S]*?gate missing: /, "");
+      }
+    });
+    return f;
+  }
+
+  function artifactChars(name, events) {
+    const want = DOC_FOR[name];
+    if (!want) return "";
+    for (let i = events.length - 1; i >= 0; i--) {
+      const ev = events[i];
+      if (ev.type !== "artifact_created") continue;
+      if (ev.summary.split(" ")[0] !== want) continue;
+      const m = ev.summary.match(/\((\d+) chars\)/);
+      return m ? (Math.round(Number(m[1]) / 100) / 10) + "k" : "";
+    }
+    return "";
+  }
+
+  function stageEvents(name, events) {
+    const actor = STAGE_ACTOR[name];
+    return events.filter((ev) => {
+      const s = String(ev.summary || "");
+      if (name === "VALIDATION") return String(ev.type || "").indexOf("validation") === 0;
+      return s.indexOf(name + "/") === 0 || s.indexOf(name + " ") === 0
+        || String(ev.actor || "") === actor;
+    }).slice(-6);
+  }
+
+  // -------------------------------------------------------- the agent blocks
+  const AGENTS = ["BA", "PROJECT", "FUNCTIONAL", "TECHNICAL", "FRAPPE"];
+  let openName = "";        // which block's detail is expanded ("" = none)
+  let followRun = true;     // keep the detail on the working agent until clicked
+
+  function effectiveOpen(data) {
+    if (openName) return openName;
+    if (!followRun) return "";
+    const live = (data && data.stages) || [];
+    const working = live.find((s) => s.state === "active" || s.state === "carried");
+    return (working && working.name) || "";
+  }
+
+  function toggleOpen(name) {
+    const cur = effectiveOpen(lastPreview);
+    followRun = false;
+    openName = (cur === name) ? "" : name;
+    renderPreview(lastPreview);
+  }
+
+  function blockCard(name, index, live, data, events, carried, open) {
+    const spec = STAGE_SPEC[name] || {};
+    const state = live ? live.state : "queued";
+    const facts = gateFacts(name, events);
+    const mark = carried.indexOf(name) >= 0 ? "carried" : (facts.verdict || "");
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "block";
+    btn.dataset.state = state;
+    btn.dataset.name = name;
+    btn.dataset.v = mark;
+    btn.setAttribute("aria-expanded", String(open === name));
+    btn.title = "Open the " + (spec.title || name) + " detail";
+
+    btn.append(el("span", "code", String(index + 1).padStart(2, "0")),
+               el("span", "state", WORD[state] || state),
+               el("span", "who", NAMES[name] || name),
+               el("span", "role", spec.role || ""));
+
+    const verdict = mark === "passed" ? "passed"
+      : mark === "failed" ? "failed"
+      : mark === "carried" ? "carried forward" : "not run";
+    const gate = el("span", "gate");
+    gate.append(el("span", "g", (spec.gate || "") + " · " + facts.checks + " checks · "
+                                + verdict),
+                el("span", "caret", "▾"));
+    btn.append(gate);
+
+    const bar = el("span", "bar");
+    const fill = document.createElement("i");
+    const pct = live && live.sections_total
+      ? Math.round((live.sections_done / live.sections_total) * 100)
+      : (state === "done" ? 100 : 0);
+    fill.style.width = pct + "%";
+    bar.append(fill);
+    btn.append(bar);
+
+    if (live && live.retries) {
+      btn.append(el("span", "retry", "↻ " + live.retries
+        + (live.retries === 1 ? " revision" : " revisions")));
+    }
+    btn.append(el("span", "file", spec.out || ""));
+
+    btn.addEventListener("click", () => toggleOpen(name));
+    return btn;
+  }
+
+  function renderValidBar(data) {
+    const bar = $("validBar");
+    const v = (data && data.validation) || {};
+    const hasRun = !!(data && data.exists);
+    const hasPayload = v.passed !== undefined || (v.missing || []).length > 0
+      || (v.coverage && Object.keys(v.coverage).length > 0);
+    bar.hidden = !(hasRun || hasPayload);
+    if (bar.hidden) return;
+    let mark = "";
+    if (v.passed === true) mark = "passed";
+    else if (v.passed === false) mark = "failed";
+    bar.dataset.v = mark;
+    $("validVerdict").textContent = !mark ? "not run · 6 checks"
+      : (mark === "passed" ? "passed · 6 checks" : "failed");
+    const cov = v.coverage || {};
+    const parts = Object.keys(cov).map((k) => (COVERAGE_LABEL[k] || k) + " " + cov[k]);
+    $("validCov").textContent = parts.length ? parts.join("  ·  ")
+      : (mark === "failed" ? (v.missing || []).length + " failing check(s)" : "");
+    bar.setAttribute("aria-expanded", String(effectiveOpen(data) === "VALIDATION"));
+    bar.onclick = () => {
+      followRun = false;
+      openName = (effectiveOpen(lastPreview) === "VALIDATION") ? "" : "VALIDATION";
+      renderPreview(lastPreview);
+    };
+  }
+
+  function renderBlocks(data) {
+    const live = (data && data.stages && data.stages.length) ? data.stages : [];
+    const events = (data && data.events) || [];
+    const carried = (data && data.carried) || [];
+    const open = effectiveOpen(data);
+    const box = $("blocks");
+    box.textContent = "";
+    AGENTS.forEach((name, i) => {
+      if (i) {
+        const prev = live.find((s) => s.name === AGENTS[i - 1]);
+        const link = el("span", "link");
+        link.setAttribute("aria-hidden", "true");
+        link.dataset.state = prev ? prev.state : "queued";
+        box.append(link);
+      }
+      box.append(blockCard(name, i, live.find((s) => s.name === name) || null,
+                           data || {}, events, carried, open));
+    });
+    renderValidBar(data);
+  }
+
+  // ----------------------------------------------------------- the dossier
+  function renderDetail(name, live, data, events) {
+    const spec = STAGE_SPEC[name] || {};
+    const box = $("agentDetail");
+    box.textContent = "";
+    const index = PIPE.indexOf(name);
+    const state = live ? live.state : "queued";
+    const carried = (data.carried || []).indexOf(name) >= 0;
+    const facts = name === "VALIDATION"
+      ? {checks: spec.checks, verdict: "", detail: ""}
+      : gateFacts(name, events);
+
+    // --- head
+    const head = el("div", "d-head");
+    head.append(el("span", "code", String(index + 1).padStart(2, "0")));
+    const h3 = el("h3", "", spec.title || name);
+    head.append(h3, el("span", "role", name === "VALIDATION"
+      ? "final check · not an agent"
+      : "Stage " + String(index + 1).padStart(2, "0") + " · " + name));
+    let mark = facts.verdict;
+    if (carried) mark = "carried";
+    const pill = el("span", "pill " , WORD[state] || state);
+    pill.dataset.state = state === "held" ? "held"
+      : (state === "done" ? "done" : (state === "queued" ? "" : "active"));
+    pill.textContent = (WORD[state] || state).toUpperCase();
+    head.append(pill);
+    const working = (data.stages || []).find(
+      (s) => s.state === "active" || s.state === "carried");
+    if (data.exists && !followRun && working && working.name !== name) {
+      const follow = el("button", "follow",
+        "follow the run · " + (NAMES[working.name] || working.name));
+      follow.type = "button";
+      follow.addEventListener("click", () => {
+        followRun = true;
+        openName = "";
+        renderPreview(lastPreview);
+      });
+      head.append(follow);
+    }
+    box.append(head);
+
+    // --- what it does
+    if (spec.does) box.append(el("p", "d-does", spec.does));
+
+    // --- two columns: receives / writes   |   gate
+    const grid = el("div", "d-grid");
+    const left = el("div", "d-col");
+    const right = el("div", "d-col");
+
+    left.append(el("p", "d-h", "Receives"));
+    const inList = el("ul", "d-list");
+    (spec.reads || []).forEach((r) => {
+      const li = document.createElement("li");
+      li.textContent = r;
+      inList.append(li);
+    });
+    left.append(inList);
+
+    left.append(el("p", "d-h", "Writes"));
+    const art = (data.artifacts || {})[name];
+    const chars = artifactChars(name, events);
+    const path = art && art.path ? art.path.split("/").pop() : spec.out;
+    const outs = (data.outputs || {})[name] || [];
+    const prim = outs.find((f) => f.primary) || outs[0] || null;
+    const out = el("div", "out");
+    out.append(el("span", "dim", "produces"));
+    if (prim) {
+      const a = document.createElement("a");
+      a.className = "path";
+      a.href = downloadUrl(data.workspace, prim.name);
+      a.setAttribute("download", "");
+      a.textContent = prim.name;
+      a.title = "download " + prim.name;
+      out.append(a);
+    } else {
+      out.append(el("span", "path", path));
+    }
+    if (chars) out.append(el("span", "", "· " + chars));
+    out.append(el("span", "arrow", "→"), el("span", "", "hands off " + spec.hands));
+    left.append(out);
+    if (outs.length > 1) {
+      const more = document.createElement("ul");
+      more.className = "more";
+      outs.slice(1).forEach((f) => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = downloadUrl(data.workspace, f.name);
+        a.setAttribute("download", "");
+        a.textContent = f.name;
+        li.append(a);
+        more.append(li);
+      });
+      left.append(more);
+    }
+
+    const sections = (live && live.sections && live.sections.length)
+      ? live.sections : (spec.sections || []);
+    if (sections.length) {
+      const written = new Set((live && live.sections_written) || []);
+      const steps = el("ul", "steps");
+      sections.forEach((id) => {
+        const li = el("li", "", SECTION_TITLE[id] || id);
+        li.dataset.done = written.has(id) ? "1" : "0";
+        steps.append(li);
+      });
+      left.append(steps);
+      if (live && live.sections_total) {
+        left.append(el("p", "d-empty", live.sections_done + " of " + live.sections_total
+          + " sections accepted"));
+      }
+    } else if (STAGE_NOTE[name]) {
+      left.append(el("p", "note-line", STAGE_NOTE[name]));
+    }
+    if (DIAGRAM[name]) left.append(el("span", "diagram", "diagram pass · " + DIAGRAM[name]));
+
+    if (name === "VALIDATION") {
+      left.append(validationChecks(data));
+    }
+
+    // --- gate
+    right.append(el("p", "d-h", "Gate"));
+    const gate = el("div", "gate");
+    gate.dataset.v = mark || "none";
+    gate.append(el("span", "gname", spec.gate || ""),
+                el("span", "gsep", "·"),
+                el("span", "", facts.checks + " checks"),
+                el("span", "gsep", "·"));
+    gate.append(el("span", "gverdict", mark === "passed" ? "PASSED"
+      : mark === "failed" ? "FAILED"
+      : mark === "carried" ? "CARRIED FORWARD" : "NOT RUN"));
+    right.append(gate);
+    right.append(el("p", "note-line", spec.gateDesc || ""));
+
+    if (facts.verdict === "failed" && facts.detail) {
+      const why = el("ul", "missing");
+      stripList(facts.detail).slice(0, 4).forEach((text) => {
+        why.append(el("li", "", cut(text, 150)));
+      });
+      right.append(why);
+    }
+    if (live && live.retries) {
+      right.append(el("div", "trail", "↻ " + live.retries
+        + (live.retries === 1 ? " revision" : " revisions") + " through this gate"));
+    }
+    const warns = (data.warnings || {})[name] || [];
+    if (warns.length) {
+      const gaps = el("div", "gaps");
+      gaps.append(el("b", "", warns.length
+        + (warns.length === 1 ? " gap carried forward" : " gaps carried forward")));
+      const list = document.createElement("ul");
+      warns.slice(0, 4).forEach((w) => list.append(el("li", "", cut(String(w), 140))));
+      if (warns.length > 4) list.append(el("li", "", "+ " + (warns.length - 4) + " more"));
+      gaps.append(list);
+      right.append(gaps);
+    }
+    if (name === "VALIDATION") {
+      const cov = (data.validation && data.validation.coverage) || null;
+      if (cov && Object.keys(cov).length) {
+        const strip = el("div", "coverage");
+        Object.keys(cov).forEach((k) => {
+          const item = document.createElement("span");
+          item.append(el("em", "", COVERAGE_LABEL[k] || k), el("b", "", String(cov[k])));
+          item.querySelector("em").style.fontStyle = "normal";
+          strip.append(item);
+        });
+        right.append(strip);
+      }
+    }
+    grid.append(left, right);
+    box.append(grid);
+
+    // --- recent activity for this agent
+    const recent = stageEvents(name, events);
+    const act = el("div", "d-activity");
+    act.append(el("p", "d-h", "Recent activity"));
+    if (recent.length) {
+      const ol = document.createElement("ol");
+      recent.forEach((ev) => {
+        const li = document.createElement("li");
+        li.append(el("span", "t", (ev.ts || "").slice(11, 19) || "--:--:--"),
+                  el("span", "k", ev.type),
+                  el("span", "s", ev.summary));
+        ol.append(li);
+      });
+      act.append(ol);
+    } else {
+      act.append(el("p", "d-empty", data.exists
+        ? "Nothing recorded for this agent yet."
+        : "Start a brief on the BA Agent tab and this fills in live."));
+    }
+    box.append(act);
+  }
+
+  const VALID_CHECKS = [
+    ["all_gates", "All five stage gates are green"],
+    ["frappe_stage", "The Frappe gate passed on recorded evidence"],
+    ["no_stubs", "No placeholder text left in any document"],
+    ["br_fully_covered", "Every business rule traces downstream"],
+    ["us_covered", "Every user story is validated somewhere"],
+    ["fr_covered", "Every functional requirement reaches the design"],
+  ];
+  const COVERAGE_LABEL = {G: "goals", BN: "needs", BR: "business rules",
+                          US: "user stories", FR: "functional reqs", UC: "use cases",
+                          T: "tasks", TECH: "build tasks", FRAPPE_PROJECT: "frappe tasks"};
+
+  function validationChecks(data) {
+    const raw = data && data.validation;
+    const v = (raw && (raw.passed !== undefined || (raw.missing || []).length
+                       || (raw.coverage && Object.keys(raw.coverage).length)))
+      ? raw : null;
+    const whyFor = {};
+    ((v && v.missing) || []).forEach((m) => {
+      const i = String(m).indexOf(":");
+      if (i > 0) whyFor[String(m).slice(0, i).trim()] = String(m).slice(i + 1).trim();
+    });
+    const list = el("ul", "vchecks");
+    VALID_CHECKS.forEach(([id, label]) => {
+      const failing = v && !v.passed && whyFor[id];
+      const row = document.createElement("li");
+      row.dataset.ok = !v ? "?" : (failing ? "0" : "1");
+      row.append(el("span", "mark", !v ? "PENDING" : (failing ? "FAILED" : "PASSED")),
+                 el("span", "", label),
+                 el("span", "why", failing ? cut(whyFor[id], 110) : ""));
+      list.append(row);
+    });
+    return list;
+  }
+
+  // ---------------------------------------------------- live event ticker
+  const CYCLE_CAPTION = {
+    brief: "The orchestrator is building this agent's handoff brief.",
+    write: "An agent is writing one section — it is checked the moment it lands.",
+    assemble: "Accepted sections are being assembled into the artifact.",
+    gate: "A deterministic gate is reading the assembled document.",
+    verdict: "The gate has ruled and the run is moving on.",
+  };
+  const EVENT_STEP = {
+    pipeline_started: "brief", pipeline_resumed: "brief", iteration_routed: "brief",
+    conversation_started: "brief", change_request_created: "brief",
+    human_review_answered: "brief", generation_requested: "brief",
+    agent_started: "write", section_done: "write", section_failed: "write",
+    human_section_ingested: "write", change_request_resolved: "write",
+    cli_pass: "write", agent_failed: "write",
+    artifact_created: "assemble", ba_artifacts_ready: "assemble",
+    sections_repair: "gate", gate_passed: "gate", gate_failed: "gate",
+    ba_final_review_requested: "verdict", ba_final_review_approved: "verdict",
+    ba_final_review_changes_requested: "verdict", stage_carried_forward: "verdict",
+    validation_passed: "verdict", validation_failed: "verdict",
+    validation_carried_forward: "verdict", budget_exhausted: "verdict",
+  };
+
+  function renderCycle(data) {
+    const events = (data && data.events) || [];
+    if (!events.length) { $("cycleLive").hidden = true; return; }
+    const ev = events[events.length - 1];
+    const key = EVENT_STEP[ev.type] || "write";
+    $("cycleLive").hidden = false;
+    $("cycleCap").textContent = CYCLE_CAPTION[key] || "";
+    $("cycleEvent").textContent = [(ev.ts || "").slice(11, 19), ev.type, ev.summary]
+      .filter(Boolean).join("   ·   ");
+  }
+
+  function renderMeta(data) {
+    const live = !!(data && data.exists && data.stages && data.stages.length);
+    $("pvMeta").hidden = !live;
+    $("pvState").textContent = !live ? "no run yet"
+      : (data.done ? (data.status === "SUCCESS" ? "finished" : "stopped") : "running");
+    if (!live) { $("pvAside").textContent = "click a block to open it"; return; }
+    $("mStatus").textContent = data.status || "—";
+    $("mGate").textContent = data.gate || "—";
+    $("mIter").textContent = data.iteration ? String(data.iteration) : "—";
+    $("mCarried").textContent = (data.carried || []).length
+      ? (data.carried || []).join(", ") : "none";
+    $("mGaps").textContent = String(data.advisories || 0);
+    const cleared = (data.stages || []).filter(
+      (s) => s.name !== "VALIDATION" && s.state === "done").length;
+    $("pvAside").textContent = cleared + " of 5 gates green · click a block";
+  }
+
+  let lastPreview = null;
+  function renderPreview(data) {
+    lastPreview = data;
+    const live = (data && data.stages && data.stages.length) ? data.stages : [];
+    const events = (data && data.events) || [];
+    renderBlocks(data);
+    renderMeta(data);
+    renderCycle(data);
+    const name = effectiveOpen(data);
+    const box = $("agentDetail");
+    if (!name) { box.textContent = ""; }
+    else renderDetail(name, live.find((s) => s.name === name) || null, data || {},
+                      events);
+  }
+  // --------------------------------------------------------- human decision
+  // What each pause is actually asking for. The pipeline stops for a human at a
+  // few specific points; naming them and saying why beats echoing an event name —
+  // "ba_final_review_requested" does not tell anyone what they are approving.
+  const PAUSES = [
+    {match: /ba_final_review_requested/,
+     what: "Review the requirements before anything is built on them",
+     why: "This is the requirements document (the BRD). The project plan, functional "
+        + "spec, technical design and the Frappe build are all derived from it, so "
+        + "approving signs off the baseline. Send guidance instead and it goes back "
+        + "to the BA agent to revise.",
+     approve: "approve", label: "Approve and release"},
+    {match: /ba_artifacts_ready|offer_continue/,
+     what: "Continue to the engineering stages?",
+     why: "Your requirements and package are saved. The remaining stages design and "
+        + "build from them; say what to change first if something is off.",
+     approve: "yes", label: "Continue"},
+    {match: /budget_exhausted/,
+     what: "The run used up its budget and stopped",
+     why: "It stopped wherever it had got to. Approve to give it more room, describe "
+        + "what to change, or stop it here.",
+     approve: "continue", label: "Give it more room"},
+    {match: /change_request|_cr_/,
+     what: "A change request came back too many times",
+     why: "The same problem returned more often than the allowed number of passes, so "
+        + "it needs a decision rather than another automatic retry.",
+     approve: "approve"},
+    {match: /agent_failed|errored|missing_stage_agent/,
+     what: "A stage stopped with an error",
+     why: "The run halted at the stage shown below. Approving retries it as it was; "
+        + "guidance tells it what to do differently.",
+     approve: "continue", label: "Retry"},
+  ];
+  const PAUSE_FALLBACK = {
+    what: "The run is waiting for your decision",
+    why: "A stage stopped for a human. Approve to carry on, or say what you want "
+       + "changed.",
+    approve: "approve",
+  };
+
+  // A run whose turn ended without finishing (the service restarted, or the process
+  // was stopped mid-stage) reports RUNNING forever with nothing driving it. Event
+  // silence alone is not the signal: FRAPPE builds on the live site without emitting
+  // history, so it is quiet for minutes while working. The server reports whether a
+  // turn is actually running, and we require that to be false.
+  const STALLED_AFTER_MS = 90000;
+
+  function stalledFor(events) {
+    if (!events.length) return 0;
+    const last = Date.parse(events[events.length - 1].ts);
+    if (!last) return 0;
+    return Date.now() - last;
+  }
+
+  function renderDecision(data) {
+    const bar = $("decision");
+    const events = (data && data.events) || [];
+    const waiting = !!data && data.status === "WAITING_FOR_HUMAN";
+    const quiet = stalledFor(events);
+    const stalled = !!data && data.status === "RUNNING" && data.busy === false
+      && quiet > STALLED_AFTER_MS;
+    if (!waiting && !stalled) { bar.hidden = true; return; }
+
+    let found = null;
+    let ev = null;
+    for (let i = events.length - 1; i >= 0 && !found; i--) {
+      const e = events[i];
+      const hit = PAUSES.find((p) => p.match.test(e.type || "")
+                                    || p.match.test(e.summary || ""));
+      if (hit) { found = hit; ev = e; }
+    }
+    const info = stalled
+      ? {what: "This run stopped advancing",
+         why: "Nothing has happened for " + Math.round(quiet / 1000)
+            + "s, which means the turn driving it ended — a service restart does "
+            + "this. Continue to pick the run up where it left off.",
+         approve: "continue", label: "Continue the run"}
+      : (found || PAUSE_FALLBACK);
+
+    $("decisionWhat").textContent = info.what;
+    $("decisionWhy").textContent = info.why;
+    const approve = $("approve");
+    approve.textContent = info.label || "Approve and continue";
+    approve.dataset.answer = info.approve || "approve";
+    $("decisionMeta").textContent = [
+      stalled ? "" : (ev ? ev.ts.slice(11, 19) + " " + ev.type : ""),
+      data.stage ? data.stage + " stage" : "",
+      data.iteration ? "pass " + data.iteration : "",
+      data.advisories
+        ? data.advisories + (data.advisories === 1 ? " open item" : " open items") : ""
+    ].filter(Boolean).join(" · ");
+    // The reader is usually scrolled down watching the activity log, so bring the
+    // bar into view the moment it appears — it is the one thing that needs an answer.
+    if (bar.hidden) {
+      bar.hidden = false;
+      try { window.scrollTo({top: 0, behavior: "smooth"}); } catch (e) { window.scrollTo(0, 0); }
+    }
+  }
+
+  // The answer resumes the paused turn, which then runs for minutes, so it is
+  // scheduled server-side (/answer) and the page keeps following progress.
+  async function reply(text) {
+    if (!text) return;
+    const busy = $("decisionBusy");
+    busy.hidden = false;
+    try {
+      const r = await fetch("/answer", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: text})});
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok || body.error) throw new Error(body.error || ("HTTP " + r.status));
+      $("guidance").value = "";
+      $("decision").hidden = true;   // it comes back if the run pauses again
+      await poll();
+    } catch (err) {
+      say("Could not send that: " + err.message, true);
+    } finally {
+      busy.hidden = true;
+    }
+  }
+  $("approve").addEventListener("click", () => reply($("approve").dataset.answer || "approve"));
+  $("abort").addEventListener("click", () => reply("abort"));
+  $("send").addEventListener("click", () => reply($("guidance").value.trim()));
+  $("guidance").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); reply($("guidance").value.trim()); }
+  });
+
+  // ------------------------------------------------------------------- poll
+  async function poll() {
+    if (!workspace) return;
+    try {
+      const r = await fetch("/api/progress?workspace=" + encodeURIComponent(workspace),
+                            {cache: "no-store"});
+      if (!r.ok) return;
+      const data = await r.json();
+      renderLedger(data);
+      renderEvents(data);
+      renderPreview(data);
+      renderStrip(data);
+      renderOverall(data);
+      renderDocs(data);
+      renderDecision(data);
+      $("elapsed").textContent = data.elapsed_s ? clock(data.elapsed_s) : "";
+      $("elapsedBig").textContent = data.elapsed_s ? clock(data.elapsed_s) : "0:00";
+
+      const carried = (data.carried || []).length;
+      let pillState = "active", pillWord = "RUNNING";
+      if (data.status === "SUCCESS") {
+        setStatus("done", carried ? "Finished with open items" : "Finished");
+        pillState = "done"; pillWord = carried ? "DONE · OPEN ITEMS" : "DONE";
+        stop();
+      } else if (data.status === "ABORTED") {
+        setStatus("held", "Stopped");
+        pillState = "held"; pillWord = "STOPPED";
+        stop();
+      } else if (data.status === "WAITING_FOR_HUMAN") {
+        setStatus("active", "Waiting for you");
+        pillWord = "WAITING";
+      } else {
+        setStatus("active", "Running · " + (NAMES[data.stage] || "starting"));
+      }
+      const pill = $("runPill");
+      pill.dataset.state = pillState;
+      pill.textContent = pillWord;
+
+      $("runState").textContent = [
+        data.status || "",
+        data.iteration ? "pass " + data.iteration : "",
+        data.advisories
+          ? data.advisories + (data.advisories === 1 ? " open item" : " open items")
+          : ""
+      ].filter(Boolean).join(" · ") || "—";
+    } catch (e) { /* a dropped poll is not worth surfacing; the next one resumes */ }
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  // ------------------------------------------------------------- connectors
+  // The tiles carry the logo and the live state; the form itself lives behind a
+  // dialog so the tab is two logos rather than two wall-of-text cards. The cards
+  // keep their ids — moving them in and out of the dialog leaves every handler,
+  // field value and "saved" message exactly where it was.
+  let cfgOpener = null;
+  function openCfg(which) {
+    const card = $(which === "telegram" ? "cfgTelegram" : "cfgWhatsapp");
+    if (!card) return;
+    cfgOpener = document.activeElement;
+    $("cfgModalTitle").textContent = which === "telegram" ? "Telegram" : "WhatsApp";
+    $("cfgSlot").append(card);
+    $("cfgOverlay").hidden = false;
+    // opening WhatsApp means "show me the code to scan", so read it now rather than
+    // waiting for the next tick
+    if (which === "whatsapp") loadWhatsappQr();
+    const first = card.querySelector("input");
+    if (first) first.focus();
+  }
+  function closeCfg() {
+    if ($("cfgOverlay").hidden) return;
+    $("cfgOverlay").hidden = true;
+    $("cfgPool").append($("cfgTelegram"), $("cfgWhatsapp"));
+    if (cfgOpener && document.contains(cfgOpener)) cfgOpener.focus();
+    cfgOpener = null;
+  }
+  $("tileTelegram").addEventListener("click", () => openCfg("telegram"));
+  $("tileWhatsapp").addEventListener("click", () => openCfg("whatsapp"));
+  $("cfgClose").addEventListener("click", closeCfg);
+  $("cfgOverlay").addEventListener("click", (e) => {
+    if (e.target && e.target.hasAttribute
+        && e.target.hasAttribute("data-cfg-close")) closeCfg();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCfg();
+  });
+  function cfgMsg(id, text, tone) {
+    const el = $(id);
+    el.textContent = text || "";
+    el.dataset.tone = tone || "";
+  }
+
+  function renderConnectors(data) {
+    $("cfgEnvPath").textContent = data.env_path || "";
+
+    const tg = data.telegram || {};
+    const tgOn = !!tg.configured && !!tg.enabled;
+    $("tgState").textContent = tg.configured
+      ? (tg.bot_username ? "bot @" + tg.bot_username : "token saved")
+        + (tg.live ? " · worker running" : " · worker idle")
+      : "no token yet";
+    $("tgPill").dataset.on = tgOn ? "1" : "0";
+    $("tgPill").textContent = tgOn ? "on" : "off";
+    if (document.activeElement !== $("tgTimeout") && tg.poll_timeout) {
+      $("tgTimeout").value = String(tg.poll_timeout);
+    }
+    if (document.activeElement !== $("tgEnabled")) {
+      $("tgEnabled").checked = !!tg.enabled;
+    }
+
+    const wa = data.whatsapp || {};
+    const waOn = !!wa.configured && !!wa.enabled;
+    const bridge = wa.bridge || {};
+    const online = wa.online !== undefined ? wa.online : !!bridge.ok;
+    // pairing comes before the switch, so the state line reports both
+    $("waState").textContent = !online ? "bridge not running"
+      : (!wa.linked ? "not linked yet — open to scan"
+         : (wa.enabled ? "linked · accepting messages" : "linked · messages off"));
+    $("waPill").dataset.on = waOn ? "1" : "0";
+    $("waPill").textContent = waOn ? "on" : "off";
+    if (document.activeElement !== $("waUrl")) {
+      $("waUrl").value = wa.bridge_url || "";
+    }
+    if (document.activeElement !== $("waAllowed")) {
+      $("waAllowed").value = wa.allow_all ? "*" : (wa.allowed_users || []).join(", ");
+    }
+    if (document.activeElement !== $("waEnabled")) {
+      $("waEnabled").checked = !!wa.enabled;
+    }
+    if (wa.bridge_command) $("waCmd").textContent = wa.bridge_command;
+  }
+
+  async function loadConnectors() {
+    try {
+      const r = await fetch("/api/connectors", {cache: "no-store"});
+      if (!r.ok) return;
+      renderConnectors(await r.json());
+    } catch (e) { /* keep whatever is on screen; the tab can be reopened */ }
+    loadWhatsappQr();
+  }
+
+  // The pairing code lives in the bridge. Showing it here saves reading it out of a
+  // terminal — and it rotates until a phone scans it, so this re-reads on a timer
+  // rather than caching.
+  async function loadWhatsappQr() {
+    const box = $("waQrBox");
+    const img = $("waQrImg");
+    const note = $("waQrNote");
+    try {
+      const r = await fetch("/api/connectors/whatsapp/qr", {cache: "no-store"});
+      if (!r.ok) return;
+      const d = await r.json();
+      note.textContent = d.message || "";
+      note.dataset.tone = d.reason === "linked" ? "ok" : "";
+      const show = d.ok && d.data_url;
+      if (show && img.src !== d.data_url) img.src = d.data_url;
+      img.hidden = !show;
+      box.hidden = !show && d.reason !== "linked";
+      $("waQrSteps").hidden = !show;
+      $("waQrTitle").textContent = d.reason === "linked" ? "This number is linked"
+        : "Scan to link this number";
+      // the command is only useful while there is no code to scan
+      $("waCmd").hidden = !!show;
+    } catch (e) { /* the bridge being down is reported by the status line */ }
+  }
+
+  let qrTimer = null;
+  function watchWhatsappQr(on) {
+    if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+    if (on) qrTimer = setInterval(loadWhatsappQr, 8000);
+  }
+
+  async function saveConnectors(which, payload, msgId) {
+    cfgMsg(msgId, "saving…", "");
+    try {
+      const r = await fetch("/api/connectors/" + which, {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)});
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok || body.error) throw new Error(body.error || ("HTTP " + r.status));
+      await loadConnectors();          // the server's answer is the truth
+      if (which === "telegram") {
+        const check = body.check || {};
+        if (check.ok) cfgMsg(msgId, "saved · connected as @" + (check.username || "?"), "ok");
+        else cfgMsg(msgId, "saved · " + (check.error || "not verified"), "bad");
+      } else {
+        const ok = ((body.whatsapp || {}).bridge || {}).ok;
+        cfgMsg(msgId, ok ? "saved · bridge reachable" : "saved · bridge not reachable",
+               ok ? "ok" : "bad");
+      }
+      return true;
+    } catch (err) {
+      cfgMsg(msgId, err.message, "bad");
+      return false;
+    }
+  }
+
+  $("tgSave").addEventListener("click", async () => {
+    const payload = {enabled: $("tgEnabled").checked,
+                     poll_timeout: $("tgTimeout").value};
+    const token = $("tgToken").value.trim();
+    if (token) payload.token = token;      // empty field means "leave it as it is"
+    if (await saveConnectors("telegram", payload, "tgMsg") && token) {
+      $("tgToken").value = "";             // never keep the secret in the page
+    }
+  });
+  $("tgClear").addEventListener("click", () => {
+    if (window.confirm("Remove the saved bot token?")) {
+      saveConnectors("telegram", {clear_token: true}, "tgMsg");
+    }
+  });
+  $("waSave").addEventListener("click", () => {
+    saveConnectors("whatsapp", {enabled: $("waEnabled").checked,
+                                bridge_url: $("waUrl").value.trim(),
+                                allowed_users: $("waAllowed").value.trim()}, "waMsg");
+  });
+
+  renderPreview(null);
+  checkResume();
+})();
+</script>
+</body>
+</html>

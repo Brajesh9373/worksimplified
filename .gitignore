@@ -121,3 +121,13 @@ CLAUDE.md
 
 # Conformance test outputs (timestamped folders from --test mode)
 **/conformance/20*-*-*_*-*-*/
+
+# WorkSimplified — local runtime data and tool state (never committed)
+.commandcode/
+.gemini/
+ba_export.md
+my_agents/projects/
+my_agents/runs/
+my_agents/_outputs/
+my_agents/**/.state/
+node_modules/

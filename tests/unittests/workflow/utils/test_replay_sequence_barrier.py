@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from google.adk.workflow.utils._replay_sequence_barrier import ReplaySequenceBarrier
 import pytest
@@ -106,3 +107,39 @@ async def test_barrier_wait_timeout_on_divergence():
 
   with pytest.raises(RuntimeError, match='Replay divergence detected'):
     await barrier.wait('NodeB@1')
+
+
+@pytest.mark.asyncio
+async def test_barrier_advisory_mode_skips_a_missing_key(caplog):
+  """Verifies that in advisory mode a timeout skips the key instead of failing.
+
+  A host that re-plans between passes (pausing for a human, or re-entering a stage
+  to resolve a change request) cannot satisfy the recorded order, so it turns the
+  guard advisory - otherwise every re-run dies as "Replay divergence detected".
+  """
+  sequence = ['NodeA@1', 'NodeB@1', 'NodeC@1']
+  barrier = ReplaySequenceBarrier(sequence, timeout_sec=0.01, advisory=True)
+  assert barrier.advisory is True
+
+  with caplog.at_level(logging.WARNING):
+    # NodeA never advanced, so NodeB's key never arrives: this must return, not raise
+    await barrier.wait('NodeB@1')
+
+  assert 'NodeB@1' in caplog.text
+  assert barrier.current_index == 2                 # stepped past the missing key
+  assert barrier.events['NodeC@1'].is_set()         # next key released
+
+  await barrier.wait('NodeC@1')                     # and the run keeps going
+
+
+def test_barrier_advisory_mode_defaults_from_env(monkeypatch):
+  """The advisory switch is opt-in: absent unless the host asks for it."""
+  sequence = ['NodeA@1']
+  monkeypatch.delenv('ADK_REPLAY_BARRIER_ADVISORY', raising=False)
+  assert ReplaySequenceBarrier(sequence).advisory is False
+
+  monkeypatch.setenv('ADK_REPLAY_BARRIER_ADVISORY', '1')
+  assert ReplaySequenceBarrier(sequence).advisory is True
+
+  monkeypatch.setenv('ADK_REPLAY_BARRIER_ADVISORY', 'no')
+  assert ReplaySequenceBarrier(sequence).advisory is False

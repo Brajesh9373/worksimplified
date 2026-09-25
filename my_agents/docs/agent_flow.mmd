@@ -1,0 +1,81 @@
+```mermaid
+flowchart TB
+    U(["👤 USER INPUT<br/>goal text<br/>or resume:&lt;session_id&gt;"]) --> O{"⚙️ DELIVERY ORCHESTRATOR<br/>DeliveryOrchestrator state machine<br/>no LLM judgment — routes on gate results"}
+
+    O -->|"bind / create workspace<br/>projects/&lt;id&gt;/"| W[("📁 PROJECT WORKSPACE<br/>context · artifacts · traceability<br/>change_requests · history<br/>handoffs · execution · frappe")]
+
+    %% ============ BA ============
+    subgraph BA["① BA AGENT — Senior Business Analyst · temp 0.2"]
+        direction TB
+        B0["📨 Brief: goal + prior draft (full)<br/>+ elicitation log + history"] --> B1["✍️ Writes BRD section-by-section<br/>objectives → scope → stakeholders →<br/>AS-IS/TO-BE → stories → rules → datarisks<br/>🟢 open: GLM 5.3 Flash<br/>🔵 closed: claude-sonnet-4-6"]
+        B1 --> B2["🔁 record_elicitation per answer<br/>[ASSUMPTION:xxx] / OQ-xxx ledger"]
+        B2 --> B3["📊 Flow diagram<br/>(flowchart TD, ≥6 nodes, ≥1 decision)"]
+    end
+    W --> B0
+    B3 --> G1{"🚦 BA GATE<br/>12 sections · ≥3 US-xxx · ≥3 BR-xxx<br/>Scope OUT ≥3 · risks · OQs · diagram"}
+
+    %% ============ PROJECT ============
+    subgraph PM["② PROJECT AGENT — Project Engineer"]
+        direction TB
+        P0["📨 Brief: full BRD + decisions<br/>+ risks + OQs"] --> P1["✍️ Writes Project Plan section-by-section<br/>WBS T-xxx · milestones · RACI · RAID · sprints<br/>🟢 open: minimax m3<br/>🔵 closed: muse spark 1.3"]
+        P1 --> P2["📊 Gantt diagram"]
+    end
+    G1 -- ✅ pass --> P0
+    P2 --> G2{"🚦 PROJECT GATE<br/>WBS rows · ISO dates ·<br/>RACI + RAID · Gantt"}
+
+    %% ============ FUNCTIONAL ============
+    subgraph FA["③ FUNCTIONAL AGENT — Functional Consultant"]
+        direction TB
+        F0["📨 Brief: full BRD + full Plan"] --> F1["✍️ Writes Functional Spec section-by-section<br/>FR-xxx catalog · UC-xxx + alternates<br/>validations · data model · trace matrix<br/>🟢 open: minimax m3<br/>🔵 closed: gpt 5.5"]
+        F1 --> F2["📊 Functional diagram"]
+    end
+    G2 -- ✅ pass --> F0
+    F2 --> G3{"🚦 FUNCTIONAL GATE<br/>FR coverage · UC alternates<br/>validations · traceability"}
+
+    %% ============ TECHNICAL ============
+    subgraph TA["④ TECHNICAL AGENT — Tech Lead"]
+        direction TB
+        T0["📨 Brief: BRD + Plan + Spec (all full)"] --> T1["✍️ Writes Tech Design section-by-section<br/>C4 + ADRs · API contracts · DB schema<br/>NFRs · deployment · TECH-xxx tasks<br/>🟢 open: Qwen 3.8 Max<br/>🔵 closed: muse spark 1.3"]
+        T1 --> T2["📊 Sequence + architecture diagrams"]
+    end
+    G3 -- ✅ pass --> T0
+    T2 --> G4{"🚦 TECHNICAL GATE<br/>ADRs · contracts · schema<br/>NFRs · TECH-xxx · diagrams"}
+
+    %% ============ FRAPPE ============
+    subgraph FR["⑤ FRAPPE AGENT — Frappe Engineer"]
+        direction TB
+        R0["📨 Brief: all 4 docs + decisions<br/>+ deps + CRs + trace chains + env"] --> R1["🔌 login → discover_frappe_env"]
+        R1 --> R2["🏗️ create_project_from_plan<br/>WBS T-xxx → Project + Tasks<br/>🟢 open: deepseek 4.1 flash<br/>🔵 closed: muse 1.3"]
+        R2 --> R3["✅ update_task · validation results"]
+    end
+    G4 -- ✅ pass --> R0
+    R3 --> G5{"🚦 FINAL VALIDATION<br/>all gates green · implementation present<br/>BR/US/FR coverage clean"}
+
+    G5 -- ✅ success --> OUT(["🎉 ERPNext PROJECT + TASKS<br/>live at Frappe site"])
+    G5 -- ❌ fail --> CRX["📝 Change Request CR-00x<br/>backward loop, max 3 passes"]
+
+    %% ---- failure / repair paths ----
+    G1 -- ❌ fail --> REP["🔧 Targeted repair: only failed<br/>sections reset → rewrite<br/>(max 2 full revisions)"]
+    G2 -- ❌ fail --> REP
+    G3 -- ❌ fail --> REP
+    G4 -- ❌ fail --> REP
+    REP -- exhausted --> H(["⏸️ HUMAN PAUSE<br/>RequestInput: guidance or abort"])
+    CRX -- backward --> O
+    H --> O
+
+    %% ---- critic (proposed) ----
+    C["🔍 CRITIC PASS — PROPOSED<br/>re-read draft vs checklist → repair<br/>before gate (structural, not advisory)"]
+    B3 -.-> C
+    P2 -.-> C
+    F2 -.-> C
+    T2 -.-> C
+
+    classDef agent fill:#1f6feb,stroke:#fff,color:#fff;
+    classDef gate fill:#9e6a03,stroke:#fff,color:#fff;
+    classDef human fill:#8957e5,stroke:#fff,color:#fff;
+    classDef out fill:#1a7f37,stroke:#fff,color:#fff;
+    class B1,P1,F1,T1,R2 agent;
+    class G1,G2,G3,G4,G5 gate;
+    class H human;
+    class OUT out;
+```
